@@ -122,16 +122,16 @@ Void TComDataCU::create( ChromaFormat chromaFormatIDC, UInt uiNumPartition, UInt
 
   if ( !bDecSubCu )
   {
-    m_phQP               = (Char*     )xMalloc(Char,     uiNumPartition);
+    m_phQP               = (SChar*    )xMalloc(SChar,    uiNumPartition);
     m_puhDepth           = (UChar*    )xMalloc(UChar,    uiNumPartition);
     m_puhWidth           = (UChar*    )xMalloc(UChar,    uiNumPartition);
     m_puhHeight          = (UChar*    )xMalloc(UChar,    uiNumPartition);
 
     m_ChromaQpAdj        = new UChar[ uiNumPartition ];
     m_skipFlag           = new Bool[ uiNumPartition ];
-    m_pePartSize         = new Char[ uiNumPartition ];
+    m_pePartSize         = new SChar[ uiNumPartition ];
     memset( m_pePartSize, NUMBER_OF_PART_SIZES,uiNumPartition * sizeof( *m_pePartSize ) );
-    m_pePredMode         = new Char[ uiNumPartition ];
+    m_pePredMode         = new SChar[ uiNumPartition ];
     m_CUTransquantBypass = new Bool[ uiNumPartition ];
 
     m_pbMergeFlag        = (Bool*  )xMalloc(Bool,   uiNumPartition);
@@ -148,9 +148,9 @@ Void TComDataCU::create( ChromaFormat chromaFormatIDC, UInt uiNumPartition, UInt
     for(UInt i=0; i<NUM_REF_PIC_LIST_01; i++)
     {
       const RefPicList rpl=RefPicList(i);
-      m_apiMVPIdx[rpl]       = new Char[ uiNumPartition ];
-      m_apiMVPNum[rpl]       = new Char[ uiNumPartition ];
-      memset( m_apiMVPIdx[rpl], -1,uiNumPartition * sizeof( Char ) );
+      m_apiMVPIdx[rpl]       = new SChar[ uiNumPartition ];
+      m_apiMVPNum[rpl]       = new SChar[ uiNumPartition ];
+      memset( m_apiMVPIdx[rpl], -1,uiNumPartition * sizeof( SChar ) );
     }
 
     for (UInt comp=0; comp<MAX_NUM_COMPONENT; comp++)
@@ -159,7 +159,7 @@ Void TComDataCU::create( ChromaFormat chromaFormatIDC, UInt uiNumPartition, UInt
       const UInt chromaShift = getComponentScaleX(compID, chromaFormatIDC) + getComponentScaleY(compID, chromaFormatIDC);
       const UInt totalSize   = (uiWidth * uiHeight) >> chromaShift;
 
-      m_crossComponentPredictionAlpha[compID] = (Char*  )xMalloc(Char,   uiNumPartition);
+      m_crossComponentPredictionAlpha[compID] = (SChar* )xMalloc(SChar,  uiNumPartition);
       m_puhTransformSkip[compID]              = (UChar* )xMalloc(UChar,  uiNumPartition);
       m_explicitRdpcmMode[compID]             = (UChar* )xMalloc(UChar,  uiNumPartition);
       m_puhCbf[compID]                        = (UChar* )xMalloc(UChar,  uiNumPartition);
@@ -402,7 +402,7 @@ Bool TComDataCU::CUIsFromSameSliceTileAndWavefrontRow( const TComDataCU *pCU /* 
          && (!getSlice()->getPPS()->getEntropyCodingSyncEnabledFlag() || getPic()->getCtu(getCtuRsAddr())->getCUPelY() == getPic()->getCtu(pCU->getCtuRsAddr())->getCUPelY());
 }
 
-Bool TComDataCU::isLastSubCUOfCtu(const UInt absPartIdx)
+Bool TComDataCU::isLastSubCUOfCtu(const UInt absPartIdx) const
 {
   const TComSPS &sps=*(getSlice()->getSPS());
 
@@ -645,7 +645,7 @@ Void TComDataCU::initSubCU( TComDataCU* pcCU, UInt uiPartUnitIdx, UInt uiDepth, 
 
   Int iSizeInUchar = sizeof( UChar  ) * m_uiNumPartition;
   Int iSizeInBool  = sizeof( Bool   ) * m_uiNumPartition;
-  Int sizeInChar = sizeof( Char  ) * m_uiNumPartition;
+  Int sizeInChar = sizeof( SChar  ) * m_uiNumPartition;
 
   memset( m_phQP,              qp,  sizeInChar );
   memset( m_pbMergeFlag,        0, iSizeInBool  );
@@ -729,7 +729,7 @@ Void TComDataCU::setOutsideCUPart( UInt uiAbsPartIdx, UInt uiDepth )
 // Copy
 // --------------------------------------------------------------------------------------------------------------------
 
-Void TComDataCU::copySubCU( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth )
+Void TComDataCU::copySubCU( TComDataCU* pcCU, UInt uiAbsPartIdx )
 {
   UInt uiPart = uiAbsPartIdx;
 
@@ -872,7 +872,7 @@ Void TComDataCU::copyPartFrom( TComDataCU* pcCU, UInt uiPartUnitIdx, UInt uiDept
   Int iSizeInUchar  = sizeof( UChar ) * uiNumPartition;
   Int iSizeInBool   = sizeof( Bool  ) * uiNumPartition;
 
-  Int sizeInChar  = sizeof( Char ) * uiNumPartition;
+  Int sizeInChar  = sizeof( SChar ) * uiNumPartition;
   memcpy( m_skipFlag   + uiOffset, pcCU->getSkipFlag(),       sizeof( *m_skipFlag )   * uiNumPartition );
   memcpy( m_phQP       + uiOffset, pcCU->getQP(),             sizeInChar                        );
   memcpy( m_pePartSize + uiOffset, pcCU->getPartitionSize(),  sizeof( *m_pePartSize ) * uiNumPartition );
@@ -954,7 +954,7 @@ Void TComDataCU::copyToPic( UChar uhDepth )
 
   Int iSizeInUchar  = sizeof( UChar ) * m_uiNumPartition;
   Int iSizeInBool   = sizeof( Bool  ) * m_uiNumPartition;
-  Int sizeInChar  = sizeof( Char ) * m_uiNumPartition;
+  Int sizeInChar  = sizeof( SChar ) * m_uiNumPartition;
 
   memcpy( pCtu->getSkipFlag() + m_absZIdxInCtu, m_skipFlag, sizeof( *m_skipFlag ) * m_uiNumPartition );
 
@@ -1021,10 +1021,10 @@ Void TComDataCU::copyToPic( UChar uhDepth )
 // Other public functions
 // --------------------------------------------------------------------------------------------------------------------
 
-TComDataCU* TComDataCU::getPULeft( UInt& uiLPartUnitIdx,
-                                   UInt uiCurrPartUnitIdx,
-                                   Bool bEnforceSliceRestriction,
-                                   Bool bEnforceTileRestriction )
+const TComDataCU* TComDataCU::getPULeft( UInt& uiLPartUnitIdx,
+                                         UInt uiCurrPartUnitIdx,
+                                         Bool bEnforceSliceRestriction,
+                                         Bool bEnforceTileRestriction ) const
 {
   UInt uiAbsPartIdx       = g_auiZscanToRaster[uiCurrPartUnitIdx];
   UInt uiAbsZorderCUIdx   = g_auiZscanToRaster[m_absZIdxInCtu];
@@ -1053,11 +1053,11 @@ TComDataCU* TComDataCU::getPULeft( UInt& uiLPartUnitIdx,
 }
 
 
-TComDataCU* TComDataCU::getPUAbove( UInt& uiAPartUnitIdx,
-                                    UInt uiCurrPartUnitIdx,
-                                    Bool bEnforceSliceRestriction,
-                                    Bool planarAtCtuBoundary,
-                                    Bool bEnforceTileRestriction )
+const TComDataCU* TComDataCU::getPUAbove( UInt& uiAPartUnitIdx,
+                                          UInt uiCurrPartUnitIdx,
+                                          Bool bEnforceSliceRestriction,
+                                          Bool planarAtCtuBoundary,
+                                          Bool bEnforceTileRestriction ) const
 {
   UInt uiAbsPartIdx       = g_auiZscanToRaster[uiCurrPartUnitIdx];
   UInt uiAbsZorderCUIdx   = g_auiZscanToRaster[m_absZIdxInCtu];
@@ -1091,7 +1091,7 @@ TComDataCU* TComDataCU::getPUAbove( UInt& uiAPartUnitIdx,
   return m_pCtuAbove;
 }
 
-TComDataCU* TComDataCU::getPUAboveLeft( UInt& uiALPartUnitIdx, UInt uiCurrPartUnitIdx, Bool bEnforceSliceRestriction )
+const TComDataCU* TComDataCU::getPUAboveLeft( UInt& uiALPartUnitIdx, UInt uiCurrPartUnitIdx, Bool bEnforceSliceRestriction ) const
 {
   UInt uiAbsPartIdx       = g_auiZscanToRaster[uiCurrPartUnitIdx];
   UInt uiAbsZorderCUIdx   = g_auiZscanToRaster[m_absZIdxInCtu];
@@ -1138,107 +1138,7 @@ TComDataCU* TComDataCU::getPUAboveLeft( UInt& uiALPartUnitIdx, UInt uiCurrPartUn
   return m_pCtuAboveLeft;
 }
 
-TComDataCU* TComDataCU::getPUAboveRight( UInt& uiARPartUnitIdx, UInt uiCurrPartUnitIdx, Bool bEnforceSliceRestriction )
-{
-  UInt uiAbsPartIdxRT     = g_auiZscanToRaster[uiCurrPartUnitIdx];
-  UInt uiAbsZorderCUIdx   = g_auiZscanToRaster[ m_absZIdxInCtu ] + m_puhWidth[0] / m_pcPic->getMinCUWidth() - 1;
-  const UInt numPartInCtuWidth = m_pcPic->getNumPartInCtuWidth();
-
-  if( ( m_pcPic->getCtu(m_ctuRsAddr)->getCUPelX() + g_auiRasterToPelX[uiAbsPartIdxRT] + m_pcPic->getMinCUWidth() ) >= m_pcSlice->getSPS()->getPicWidthInLumaSamples() )
-  {
-    uiARPartUnitIdx = MAX_UINT;
-    return NULL;
-  }
-
-  if ( RasterAddress::lessThanCol( uiAbsPartIdxRT, numPartInCtuWidth - 1, numPartInCtuWidth ) )
-  {
-    if ( !RasterAddress::isZeroRow( uiAbsPartIdxRT, numPartInCtuWidth ) )
-    {
-      if ( uiCurrPartUnitIdx > g_auiRasterToZscan[ uiAbsPartIdxRT - numPartInCtuWidth + 1 ] )
-      {
-        uiARPartUnitIdx = g_auiRasterToZscan[ uiAbsPartIdxRT - numPartInCtuWidth + 1 ];
-        if ( RasterAddress::isEqualRowOrCol( uiAbsPartIdxRT, uiAbsZorderCUIdx, numPartInCtuWidth ) )
-        {
-          return m_pcPic->getCtu( getCtuRsAddr() );
-        }
-        else
-        {
-          uiARPartUnitIdx -= m_absZIdxInCtu;
-          return this;
-        }
-      }
-      uiARPartUnitIdx = MAX_UINT;
-      return NULL;
-    }
-    uiARPartUnitIdx = g_auiRasterToZscan[ uiAbsPartIdxRT + m_pcPic->getNumPartitionsInCtu() - numPartInCtuWidth + 1 ];
-
-    if ( bEnforceSliceRestriction && !CUIsFromSameSliceAndTile(m_pCtuAbove) )
-    {
-      return NULL;
-    }
-    return m_pCtuAbove;
-  }
-
-  if ( !RasterAddress::isZeroRow( uiAbsPartIdxRT, numPartInCtuWidth ) )
-  {
-    uiARPartUnitIdx = MAX_UINT;
-    return NULL;
-  }
-
-  uiARPartUnitIdx = g_auiRasterToZscan[ m_pcPic->getNumPartitionsInCtu() - numPartInCtuWidth ];
-
-  if ( bEnforceSliceRestriction && !CUIsFromSameSliceAndTile(m_pCtuAboveRight) )
-  {
-    return NULL;
-  }
-  return m_pCtuAboveRight;
-}
-
-TComDataCU* TComDataCU::getPUBelowLeft( UInt& uiBLPartUnitIdx, UInt uiCurrPartUnitIdx, Bool bEnforceSliceRestriction )
-{
-  UInt uiAbsPartIdxLB     = g_auiZscanToRaster[uiCurrPartUnitIdx];
-  const UInt numPartInCtuWidth = m_pcPic->getNumPartInCtuWidth();
-  UInt uiAbsZorderCUIdxLB = g_auiZscanToRaster[ m_absZIdxInCtu ] + (m_puhHeight[0] / m_pcPic->getMinCUHeight() - 1)*numPartInCtuWidth;
-
-  if( ( m_pcPic->getCtu(m_ctuRsAddr)->getCUPelY() + g_auiRasterToPelY[uiAbsPartIdxLB] + m_pcPic->getMinCUHeight() ) >= m_pcSlice->getSPS()->getPicHeightInLumaSamples() )
-  {
-    uiBLPartUnitIdx = MAX_UINT;
-    return NULL;
-  }
-
-  if ( RasterAddress::lessThanRow( uiAbsPartIdxLB, m_pcPic->getNumPartInCtuHeight() - 1, numPartInCtuWidth ) )
-  {
-    if ( !RasterAddress::isZeroCol( uiAbsPartIdxLB, numPartInCtuWidth ) )
-    {
-      if ( uiCurrPartUnitIdx > g_auiRasterToZscan[ uiAbsPartIdxLB + numPartInCtuWidth - 1 ] )
-      {
-        uiBLPartUnitIdx = g_auiRasterToZscan[ uiAbsPartIdxLB + numPartInCtuWidth - 1 ];
-        if ( RasterAddress::isEqualRowOrCol( uiAbsPartIdxLB, uiAbsZorderCUIdxLB, numPartInCtuWidth ) )
-        {
-          return m_pcPic->getCtu( getCtuRsAddr() );
-        }
-        else
-        {
-          uiBLPartUnitIdx -= m_absZIdxInCtu;
-          return this;
-        }
-      }
-      uiBLPartUnitIdx = MAX_UINT;
-      return NULL;
-    }
-    uiBLPartUnitIdx = g_auiRasterToZscan[ uiAbsPartIdxLB + numPartInCtuWidth*2 - 1 ];
-    if ( bEnforceSliceRestriction && !CUIsFromSameSliceAndTile(m_pCtuLeft) )
-    {
-      return NULL;
-    }
-    return m_pCtuLeft;
-  }
-
-  uiBLPartUnitIdx = MAX_UINT;
-  return NULL;
-}
-
-TComDataCU* TComDataCU::getPUBelowLeftAdi(UInt& uiBLPartUnitIdx,  UInt uiCurrPartUnitIdx, UInt uiPartUnitOffset, Bool bEnforceSliceRestriction)
+const TComDataCU* TComDataCU::getPUBelowLeft(UInt& uiBLPartUnitIdx,  UInt uiCurrPartUnitIdx, UInt uiPartUnitOffset, Bool bEnforceSliceRestriction) const
 {
   UInt uiAbsPartIdxLB     = g_auiZscanToRaster[uiCurrPartUnitIdx];
   const UInt numPartInCtuWidth = m_pcPic->getNumPartInCtuWidth();
@@ -1282,7 +1182,7 @@ TComDataCU* TComDataCU::getPUBelowLeftAdi(UInt& uiBLPartUnitIdx,  UInt uiCurrPar
   return NULL;
 }
 
-TComDataCU* TComDataCU::getPUAboveRightAdi(UInt&  uiARPartUnitIdx, UInt uiCurrPartUnitIdx, UInt uiPartUnitOffset, Bool bEnforceSliceRestriction)
+const TComDataCU* TComDataCU::getPUAboveRight(UInt&  uiARPartUnitIdx, UInt uiCurrPartUnitIdx, UInt uiPartUnitOffset, Bool bEnforceSliceRestriction) const
 {
   UInt uiAbsPartIdxRT     = g_auiZscanToRaster[uiCurrPartUnitIdx];
   UInt uiAbsZorderCUIdx   = g_auiZscanToRaster[ m_absZIdxInCtu ] + (m_puhWidth[0] / m_pcPic->getMinCUWidth()) - 1;
@@ -1342,7 +1242,7 @@ TComDataCU* TComDataCU::getPUAboveRightAdi(UInt&  uiARPartUnitIdx, UInt uiCurrPa
 *\param   uiCurrAbsIdxInCtu
 *\returns TComDataCU*   point of TComDataCU of left QpMinCu
 */
-TComDataCU* TComDataCU::getQpMinCuLeft( UInt& uiLPartUnitIdx, UInt uiCurrAbsIdxInCtu )
+const TComDataCU* TComDataCU::getQpMinCuLeft( UInt& uiLPartUnitIdx, UInt uiCurrAbsIdxInCtu ) const
 {
   const UInt numPartInCtuWidth = m_pcPic->getNumPartInCtuWidth();
   const UInt maxCUDepth        = getSlice()->getSPS()->getMaxTotalCUDepth();
@@ -1369,7 +1269,7 @@ TComDataCU* TComDataCU::getQpMinCuLeft( UInt& uiLPartUnitIdx, UInt uiCurrAbsIdxI
 *\param   uiCurrAbsIdxInCtu
 *\returns TComDataCU*   point of TComDataCU of above QpMinCu
 */
-TComDataCU* TComDataCU::getQpMinCuAbove( UInt& uiAPartUnitIdx, UInt uiCurrAbsIdxInCtu )
+const TComDataCU* TComDataCU::getQpMinCuAbove( UInt& uiAPartUnitIdx, UInt uiCurrAbsIdxInCtu ) const
 {
   const UInt numPartInCtuWidth = m_pcPic->getNumPartInCtuWidth();
   const UInt maxCUDepth        = getSlice()->getSPS()->getMaxTotalCUDepth();
@@ -1395,18 +1295,18 @@ TComDataCU* TComDataCU::getQpMinCuAbove( UInt& uiAPartUnitIdx, UInt uiCurrAbsIdx
 
 /** Get reference QP from left QpMinCu or latest coded QP
 *\param   uiCurrAbsIdxInCtu
-*\returns Char   reference QP value
+*\returns SChar   reference QP value
 */
-Char TComDataCU::getRefQP( UInt uiCurrAbsIdxInCtu )
+SChar TComDataCU::getRefQP( UInt uiCurrAbsIdxInCtu ) const
 {
   UInt lPartIdx = MAX_UINT;
   UInt aPartIdx = MAX_UINT;
-  TComDataCU* cULeft  = getQpMinCuLeft ( lPartIdx, m_absZIdxInCtu + uiCurrAbsIdxInCtu );
-  TComDataCU* cUAbove = getQpMinCuAbove( aPartIdx, m_absZIdxInCtu + uiCurrAbsIdxInCtu );
+  const TComDataCU* cULeft  = getQpMinCuLeft ( lPartIdx, m_absZIdxInCtu + uiCurrAbsIdxInCtu );
+  const TComDataCU* cUAbove = getQpMinCuAbove( aPartIdx, m_absZIdxInCtu + uiCurrAbsIdxInCtu );
   return (((cULeft? cULeft->getQP( lPartIdx ): getLastCodedQP( uiCurrAbsIdxInCtu )) + (cUAbove? cUAbove->getQP( aPartIdx ): getLastCodedQP( uiCurrAbsIdxInCtu )) + 1) >> 1);
 }
 
-Int TComDataCU::getLastValidPartIdx( Int iAbsPartIdx )
+Int TComDataCU::getLastValidPartIdx( Int iAbsPartIdx ) const
 {
   Int iLastValidPartIdx = iAbsPartIdx-1;
   while ( iLastValidPartIdx >= 0
@@ -1418,7 +1318,7 @@ Int TComDataCU::getLastValidPartIdx( Int iAbsPartIdx )
   return iLastValidPartIdx;
 }
 
-Char TComDataCU::getLastCodedQP( UInt uiAbsPartIdx )
+SChar TComDataCU::getLastCodedQP( UInt uiAbsPartIdx ) const
 {
   UInt uiQUPartIdxMask = ~((1<<((getSlice()->getSPS()->getMaxTotalCUDepth() - getSlice()->getPPS()->getMaxCuDQPDepth())<<1))-1);
   Int iLastValidPartIdx = getLastValidPartIdx( uiAbsPartIdx&uiQUPartIdxMask ); // A idx will be invalid if it is off the right or bottom edge of the picture.
@@ -1458,7 +1358,7 @@ Char TComDataCU::getLastCodedQP( UInt uiAbsPartIdx )
  * \param   absPartIdx
  * \returns true if the CU is coded in lossless coding mode; false if otherwise
  */
-Bool TComDataCU::isLosslessCoded(UInt absPartIdx)
+Bool TComDataCU::isLosslessCoded(UInt absPartIdx) const
 {
   return (getSlice()->getPPS()->getTransquantBypassEnableFlag() && getCUTransquantBypass (absPartIdx));
 }
@@ -1470,7 +1370,7 @@ Bool TComDataCU::isLosslessCoded(UInt absPartIdx)
 *\param   [in]  uiAbsPartIdx
 *\param   [out] uiModeList pointer to chroma intra modes array
 */
-Void TComDataCU::getAllowedChromaDir( UInt uiAbsPartIdx, UInt uiModeList[NUM_CHROMA_MODE] )
+Void TComDataCU::getAllowedChromaDir( UInt uiAbsPartIdx, UInt uiModeList[NUM_CHROMA_MODE] ) const
 {
   uiModeList[0] = PLANAR_IDX;
   uiModeList[1] = VER_IDX;
@@ -1498,9 +1398,8 @@ Void TComDataCU::getAllowedChromaDir( UInt uiAbsPartIdx, UInt uiModeList[NUM_CHR
 *\param   piMode          it is set with MPM mode in case both MPM are equal. It is used to restrict RD search at encode side.
 *\returns Number of MPM
 */
-Void TComDataCU::getIntraDirPredictor( UInt uiAbsPartIdx, Int uiIntraDirPred[NUM_MOST_PROBABLE_MODES], const ComponentID compID, Int* piMode  )
+Void TComDataCU::getIntraDirPredictor( UInt uiAbsPartIdx, Int uiIntraDirPred[NUM_MOST_PROBABLE_MODES], const ComponentID compID, Int* piMode ) const
 {
-  TComDataCU* pcCULeft, *pcCUAbove;
   UInt        LeftPartIdx  = MAX_UINT;
   UInt        AbovePartIdx = MAX_UINT;
   Int         iLeftIntraDir, iAboveIntraDir;
@@ -1510,7 +1409,7 @@ Void TComDataCU::getIntraDirPredictor( UInt uiAbsPartIdx, Int uiIntraDirPred[NUM
   const ChannelType chType = toChannelType(compID);
   const ChromaFormat chForm = getPic()->getChromaFormat();
   // Get intra direction of left PU
-  pcCULeft = getPULeft( LeftPartIdx, m_absZIdxInCtu + uiAbsPartIdx );
+  const TComDataCU *pcCULeft = getPULeft( LeftPartIdx, m_absZIdxInCtu + uiAbsPartIdx );
 
   if (isChroma(compID))
   {
@@ -1519,7 +1418,7 @@ Void TComDataCU::getIntraDirPredictor( UInt uiAbsPartIdx, Int uiIntraDirPred[NUM
   iLeftIntraDir  = pcCULeft ? ( pcCULeft->isIntra( LeftPartIdx ) ? pcCULeft->getIntraDir( chType, LeftPartIdx ) : DC_IDX ) : DC_IDX;
 
   // Get intra direction of above PU
-  pcCUAbove = getPUAbove( AbovePartIdx, m_absZIdxInCtu + uiAbsPartIdx, true, true );
+  const TComDataCU *pcCUAbove = getPUAbove( AbovePartIdx, m_absZIdxInCtu + uiAbsPartIdx, true, true );
 
   if (isChroma(compID))
   {
@@ -1584,11 +1483,11 @@ Void TComDataCU::getIntraDirPredictor( UInt uiAbsPartIdx, Int uiIntraDirPred[NUM
   }
 }
 
-UInt TComDataCU::getCtxSplitFlag( UInt uiAbsPartIdx, UInt uiDepth )
+UInt TComDataCU::getCtxSplitFlag( UInt uiAbsPartIdx, UInt uiDepth ) const
 {
-  TComDataCU* pcTempCU;
-  UInt        uiTempPartIdx;
-  UInt        uiCtx;
+  const TComDataCU* pcTempCU;
+  UInt              uiTempPartIdx;
+  UInt              uiCtx;
   // Get left split flag
   pcTempCU = getPULeft( uiTempPartIdx, m_absZIdxInCtu + uiAbsPartIdx );
   uiCtx  = ( pcTempCU ) ? ( ( pcTempCU->getDepth( uiTempPartIdx ) > uiDepth ) ? 1 : 0 ) : 0;
@@ -1600,7 +1499,7 @@ UInt TComDataCU::getCtxSplitFlag( UInt uiAbsPartIdx, UInt uiDepth )
   return uiCtx;
 }
 
-UInt TComDataCU::getCtxQtCbf( TComTU &rTu, const ChannelType chType )
+UInt TComDataCU::getCtxQtCbf( TComTU &rTu, const ChannelType chType ) const
 {
   const UInt transformDepth = rTu.GetTransformDepthRel();
 
@@ -1615,7 +1514,7 @@ UInt TComDataCU::getCtxQtCbf( TComTU &rTu, const ChannelType chType )
   }
 }
 
-UInt TComDataCU::getQuadtreeTULog2MinSizeInCU( UInt absPartIdx )
+UInt TComDataCU::getQuadtreeTULog2MinSizeInCU( UInt absPartIdx ) const
 {
   UInt log2CbSize = g_aucConvertToBit[getWidth( absPartIdx )] + 2;
   PartSize  partSize  = getPartitionSize( absPartIdx );
@@ -1642,11 +1541,11 @@ UInt TComDataCU::getQuadtreeTULog2MinSizeInCU( UInt absPartIdx )
   return log2MinTUSizeInCU;
 }
 
-UInt TComDataCU::getCtxSkipFlag( UInt uiAbsPartIdx )
+UInt TComDataCU::getCtxSkipFlag( UInt uiAbsPartIdx ) const
 {
-  TComDataCU* pcTempCU;
-  UInt        uiTempPartIdx;
-  UInt        uiCtx = 0;
+  const TComDataCU* pcTempCU;
+  UInt              uiTempPartIdx;
+  UInt              uiCtx = 0;
 
   // Get BCBP of left PU
   pcTempCU = getPULeft( uiTempPartIdx, m_absZIdxInCtu + uiAbsPartIdx );
@@ -1659,13 +1558,13 @@ UInt TComDataCU::getCtxSkipFlag( UInt uiAbsPartIdx )
   return uiCtx;
 }
 
-UInt TComDataCU::getCtxInterDir( UInt uiAbsPartIdx )
+UInt TComDataCU::getCtxInterDir( UInt uiAbsPartIdx ) const
 {
   return getDepth( uiAbsPartIdx );
 }
 
 
-UChar TComDataCU::getQtRootCbf( UInt uiIdx )
+UChar TComDataCU::getQtRootCbf( UInt uiIdx ) const
 {
   const UInt numberValidComponents = getPic()->getNumberValidComponents();
   return getCbf( uiIdx, COMPONENT_Y, 0 )
@@ -1721,7 +1620,7 @@ Void TComDataCU::setDepthSubParts( UInt uiDepth, UInt uiAbsPartIdx )
   memset( m_puhDepth + uiAbsPartIdx, uiDepth, sizeof(UChar)*uiCurrPartNumb );
 }
 
-Bool TComDataCU::isFirstAbsZorderIdxInDepth (UInt uiAbsPartIdx, UInt uiDepth)
+Bool TComDataCU::isFirstAbsZorderIdxInDepth (UInt uiAbsPartIdx, UInt uiDepth) const
 {
   UInt uiPartNumb = m_pcPic->getNumPartitionsInCtu() >> (uiDepth << 1);
   return (((m_absZIdxInCtu + uiAbsPartIdx)% uiPartNumb) == 0);
@@ -1913,12 +1812,12 @@ Void TComDataCU::setInterDirSubParts( UInt uiDir, UInt uiAbsPartIdx, UInt uiPart
 
 Void TComDataCU::setMVPIdxSubParts( Int iMVPIdx, RefPicList eRefPicList, UInt uiAbsPartIdx, UInt uiPartIdx, UInt uiDepth )
 {
-  setSubPart<Char>( iMVPIdx, m_apiMVPIdx[eRefPicList], uiAbsPartIdx, uiDepth, uiPartIdx );
+  setSubPart<SChar>( iMVPIdx, m_apiMVPIdx[eRefPicList], uiAbsPartIdx, uiDepth, uiPartIdx );
 }
 
 Void TComDataCU::setMVPNumSubParts( Int iMVPNum, RefPicList eRefPicList, UInt uiAbsPartIdx, UInt uiPartIdx, UInt uiDepth )
 {
-  setSubPart<Char>( iMVPNum, m_apiMVPNum[eRefPicList], uiAbsPartIdx, uiDepth, uiPartIdx );
+  setSubPart<SChar>( iMVPNum, m_apiMVPNum[eRefPicList], uiAbsPartIdx, uiDepth, uiPartIdx );
 }
 
 
@@ -1951,9 +1850,9 @@ Void TComDataCU::setTransformSkipPartRange ( UInt useTransformSkip, ComponentID 
   memset((m_puhTransformSkip[compID] + uiAbsPartIdx), useTransformSkip, (sizeof(UChar) * uiCoveredPartIdxes));
 }
 
-Void TComDataCU::setCrossComponentPredictionAlphaPartRange( Char alphaValue, ComponentID compID, UInt uiAbsPartIdx, UInt uiCoveredPartIdxes )
+Void TComDataCU::setCrossComponentPredictionAlphaPartRange( SChar alphaValue, ComponentID compID, UInt uiAbsPartIdx, UInt uiCoveredPartIdxes )
 {
-  memset((m_crossComponentPredictionAlpha[compID] + uiAbsPartIdx), alphaValue, (sizeof(Char) * uiCoveredPartIdxes));
+  memset((m_crossComponentPredictionAlpha[compID] + uiAbsPartIdx), alphaValue, (sizeof(SChar) * uiCoveredPartIdxes));
 }
 
 Void TComDataCU::setExplicitRdpcmModePartRange ( UInt rdpcmMode, ComponentID compID, UInt uiAbsPartIdx, UInt uiCoveredPartIdxes )
@@ -1969,7 +1868,7 @@ Void TComDataCU::setSizeSubParts( UInt uiWidth, UInt uiHeight, UInt uiAbsPartIdx
   memset( m_puhHeight + uiAbsPartIdx, uiHeight, sizeof(UChar)*uiCurrPartNumb );
 }
 
-UChar TComDataCU::getNumPartitions(const UInt uiAbsPartIdx)
+UChar TComDataCU::getNumPartitions(const UInt uiAbsPartIdx) const
 {
   UChar iNumPart = 0;
 
@@ -1990,7 +1889,7 @@ UChar TComDataCU::getNumPartitions(const UInt uiAbsPartIdx)
 }
 
 // This is for use by a leaf/sub CU object only, with no additional AbsPartIdx
-Void TComDataCU::getPartIndexAndSize( UInt uiPartIdx, UInt& ruiPartAddr, Int& riWidth, Int& riHeight )
+Void TComDataCU::getPartIndexAndSize( UInt uiPartIdx, UInt& ruiPartAddr, Int& riWidth, Int& riHeight ) const
 {
   switch ( m_pePartSize[0] )
   {
@@ -2030,8 +1929,8 @@ Void TComDataCU::getPartIndexAndSize( UInt uiPartIdx, UInt& ruiPartAddr, Int& ri
   }
 }
 
-
-Void TComDataCU::getMvField ( TComDataCU* pcCU, UInt uiAbsPartIdx, RefPicList eRefPicList, TComMvField& rcMvField )
+// static member function
+Void TComDataCU::getMvField ( const TComDataCU* pcCU, UInt uiAbsPartIdx, RefPicList eRefPicList, TComMvField& rcMvField )
 {
   if ( pcCU == NULL )  // OUT OF BOUNDARY
   {
@@ -2040,11 +1939,11 @@ Void TComDataCU::getMvField ( TComDataCU* pcCU, UInt uiAbsPartIdx, RefPicList eR
     return;
   }
 
-  TComCUMvField*  pcCUMvField = pcCU->getCUMvField( eRefPicList );
+  const TComCUMvField*  pcCUMvField = pcCU->getCUMvField( eRefPicList );
   rcMvField.setMvField( pcCUMvField->getMv( uiAbsPartIdx ), pcCUMvField->getRefIdx( uiAbsPartIdx ) );
 }
 
-Void TComDataCU::deriveLeftRightTopIdxGeneral ( UInt uiAbsPartIdx, UInt uiPartIdx, UInt& ruiPartIdxLT, UInt& ruiPartIdxRT )
+Void TComDataCU::deriveLeftRightTopIdxGeneral ( UInt uiAbsPartIdx, UInt uiPartIdx, UInt& ruiPartIdxLT, UInt& ruiPartIdxRT ) const
 {
   ruiPartIdxLT = m_absZIdxInCtu + uiAbsPartIdx;
   UInt uiPUWidth = 0;
@@ -2093,7 +1992,7 @@ Void TComDataCU::deriveLeftRightTopIdxGeneral ( UInt uiAbsPartIdx, UInt uiPartId
   ruiPartIdxRT = g_auiRasterToZscan [g_auiZscanToRaster[ ruiPartIdxLT ] + uiPUWidth / m_pcPic->getMinCUWidth() - 1 ];
 }
 
-Void TComDataCU::deriveLeftBottomIdxGeneral( UInt uiAbsPartIdx, UInt uiPartIdx, UInt& ruiPartIdxLB )
+Void TComDataCU::deriveLeftBottomIdxGeneral( UInt uiAbsPartIdx, UInt uiPartIdx, UInt& ruiPartIdxLB ) const
 {
   UInt uiPUHeight = 0;
   switch ( m_pePartSize[uiAbsPartIdx] )
@@ -2140,7 +2039,7 @@ Void TComDataCU::deriveLeftBottomIdxGeneral( UInt uiAbsPartIdx, UInt uiPartIdx, 
   ruiPartIdxLB      = g_auiRasterToZscan [g_auiZscanToRaster[ m_absZIdxInCtu + uiAbsPartIdx ] + ((uiPUHeight / m_pcPic->getMinCUHeight()) - 1)*m_pcPic->getNumPartInCtuWidth()];
 }
 
-Void TComDataCU::deriveLeftRightTopIdx ( UInt uiPartIdx, UInt& ruiPartIdxLT, UInt& ruiPartIdxRT )
+Void TComDataCU::deriveLeftRightTopIdx ( UInt uiPartIdx, UInt& ruiPartIdxLT, UInt& ruiPartIdxRT ) const
 {
   ruiPartIdxLT = m_absZIdxInCtu;
   ruiPartIdxRT = g_auiRasterToZscan [g_auiZscanToRaster[ ruiPartIdxLT ] + m_puhWidth[0] / m_pcPic->getMinCUWidth() - 1 ];
@@ -2180,7 +2079,7 @@ Void TComDataCU::deriveLeftRightTopIdx ( UInt uiPartIdx, UInt& ruiPartIdxLT, UIn
 
 }
 
-Void TComDataCU::deriveLeftBottomIdx( UInt  uiPartIdx,      UInt&      ruiPartIdxLB )
+Void TComDataCU::deriveLeftBottomIdx( UInt  uiPartIdx,      UInt&      ruiPartIdxLB ) const
 {
   ruiPartIdxLB      = g_auiRasterToZscan [g_auiZscanToRaster[ m_absZIdxInCtu ] + ( ((m_puhHeight[0] / m_pcPic->getMinCUHeight())>>1) - 1)*m_pcPic->getNumPartInCtuWidth()];
 
@@ -2220,7 +2119,7 @@ Void TComDataCU::deriveLeftBottomIdx( UInt  uiPartIdx,      UInt&      ruiPartId
  * \param [in]  uiPartIdx     current partition index
  * \param [out] ruiPartIdxRB  partition index of neighbouring bottom right block
  */
-Void TComDataCU::deriveRightBottomIdx( UInt uiPartIdx, UInt &ruiPartIdxRB )
+Void TComDataCU::deriveRightBottomIdx( UInt uiPartIdx, UInt &ruiPartIdxRB ) const
 {
   ruiPartIdxRB      = g_auiRasterToZscan [g_auiZscanToRaster[ m_absZIdxInCtu ] + ( ((m_puhHeight[0] / m_pcPic->getMinCUHeight())>>1) - 1)*m_pcPic->getNumPartInCtuWidth() +  m_puhWidth[0] / m_pcPic->getMinCUWidth() - 1];
 
@@ -2256,26 +2155,7 @@ Void TComDataCU::deriveRightBottomIdx( UInt uiPartIdx, UInt &ruiPartIdxRB )
   }
 }
 
-Void TComDataCU::deriveLeftRightTopIdxAdi ( UInt& ruiPartIdxLT, UInt& ruiPartIdxRT, UInt uiPartOffset, UInt uiPartDepth )
-{
-  UInt uiNumPartInWidth = (m_puhWidth[0]/m_pcPic->getMinCUWidth())>>uiPartDepth;
-  ruiPartIdxLT = m_absZIdxInCtu + uiPartOffset;
-  ruiPartIdxRT = g_auiRasterToZscan[ g_auiZscanToRaster[ ruiPartIdxLT ] + uiNumPartInWidth - 1 ];
-}
-
-Void TComDataCU::deriveLeftBottomIdxAdi( UInt& ruiPartIdxLB, UInt uiPartOffset, UInt uiPartDepth )
-{
-  UInt uiAbsIdx;
-  UInt uiMinCuWidth, uiWidthInMinCus;
-
-  uiMinCuWidth    = getPic()->getMinCUWidth();
-  uiWidthInMinCus = (getWidth(0)/uiMinCuWidth)>>uiPartDepth;
-  uiAbsIdx        = getZorderIdxInCtu()+uiPartOffset+(m_uiNumPartition>>(uiPartDepth<<1))-1;
-  uiAbsIdx        = g_auiZscanToRaster[uiAbsIdx]-(uiWidthInMinCus-1);
-  ruiPartIdxLB    = g_auiRasterToZscan[uiAbsIdx];
-}
-
-Bool TComDataCU::hasEqualMotion( UInt uiAbsPartIdx, TComDataCU* pcCandCU, UInt uiCandAbsPartIdx )
+Bool TComDataCU::hasEqualMotion( UInt uiAbsPartIdx, const TComDataCU* pcCandCU, UInt uiCandAbsPartIdx ) const
 {
   if ( getInterDir( uiAbsPartIdx ) != pcCandCU->getInterDir( uiCandAbsPartIdx ) )
   {
@@ -2298,7 +2178,7 @@ Bool TComDataCU::hasEqualMotion( UInt uiAbsPartIdx, TComDataCU* pcCandCU, UInt u
 }
 
 //! Construct a list of merging candidates
-Void TComDataCU::getInterMergeCandidates( UInt uiAbsPartIdx, UInt uiPUIdx, TComMvField* pcMvFieldNeighbours, UChar* puhInterDirNeighbours, Int& numValidMergeCand, Int mrgCandIdx )
+Void TComDataCU::getInterMergeCandidates( UInt uiAbsPartIdx, UInt uiPUIdx, TComMvField* pcMvFieldNeighbours, UChar* puhInterDirNeighbours, Int& numValidMergeCand, Int mrgCandIdx ) const
 {
   UInt uiAbsPartAddr = m_absZIdxInCtu + uiAbsPartIdx;
   Bool abCandIsInter[ MRG_MAX_NUM_CANDS ];
@@ -2322,8 +2202,7 @@ Void TComDataCU::getInterMergeCandidates( UInt uiAbsPartIdx, UInt uiPUIdx, TComM
 
   //left
   UInt uiLeftPartIdx = 0;
-  TComDataCU* pcCULeft = 0;
-  pcCULeft = getPULeft( uiLeftPartIdx, uiPartIdxLB );
+  const TComDataCU *pcCULeft = getPULeft( uiLeftPartIdx, uiPartIdxLB );
 
   Bool isAvailableA1 = pcCULeft &&
                        pcCULeft->isDiffMER(xP -1, yP+nPSH-1, xP, yP) &&
@@ -2336,10 +2215,10 @@ Void TComDataCU::getInterMergeCandidates( UInt uiAbsPartIdx, UInt uiPUIdx, TComM
     // get Inter Dir
     puhInterDirNeighbours[iCount] = pcCULeft->getInterDir( uiLeftPartIdx );
     // get Mv from Left
-    pcCULeft->getMvField( pcCULeft, uiLeftPartIdx, REF_PIC_LIST_0, pcMvFieldNeighbours[iCount<<1] );
+    TComDataCU::getMvField( pcCULeft, uiLeftPartIdx, REF_PIC_LIST_0, pcMvFieldNeighbours[iCount<<1] );
     if ( getSlice()->isInterB() )
     {
-      pcCULeft->getMvField( pcCULeft, uiLeftPartIdx, REF_PIC_LIST_1, pcMvFieldNeighbours[(iCount<<1)+1] );
+      TComDataCU::getMvField( pcCULeft, uiLeftPartIdx, REF_PIC_LIST_1, pcMvFieldNeighbours[(iCount<<1)+1] );
     }
     if ( mrgCandIdx == iCount )
     {
@@ -2355,8 +2234,7 @@ Void TComDataCU::getInterMergeCandidates( UInt uiAbsPartIdx, UInt uiPUIdx, TComM
   }
   // above
   UInt uiAbovePartIdx = 0;
-  TComDataCU* pcCUAbove = 0;
-  pcCUAbove = getPUAbove( uiAbovePartIdx, uiPartIdxRT );
+  const TComDataCU *pcCUAbove = getPUAbove( uiAbovePartIdx, uiPartIdxRT );
 
   Bool isAvailableB1 = pcCUAbove &&
                        pcCUAbove->isDiffMER(xP+nPSW-1, yP-1, xP, yP) &&
@@ -2369,10 +2247,10 @@ Void TComDataCU::getInterMergeCandidates( UInt uiAbsPartIdx, UInt uiPUIdx, TComM
     // get Inter Dir
     puhInterDirNeighbours[iCount] = pcCUAbove->getInterDir( uiAbovePartIdx );
     // get Mv from Left
-    pcCUAbove->getMvField( pcCUAbove, uiAbovePartIdx, REF_PIC_LIST_0, pcMvFieldNeighbours[iCount<<1] );
+    TComDataCU::getMvField( pcCUAbove, uiAbovePartIdx, REF_PIC_LIST_0, pcMvFieldNeighbours[iCount<<1] );
     if ( getSlice()->isInterB() )
     {
-      pcCUAbove->getMvField( pcCUAbove, uiAbovePartIdx, REF_PIC_LIST_1, pcMvFieldNeighbours[(iCount<<1)+1] );
+      TComDataCU::getMvField( pcCUAbove, uiAbovePartIdx, REF_PIC_LIST_1, pcMvFieldNeighbours[(iCount<<1)+1] );
     }
     if ( mrgCandIdx == iCount )
     {
@@ -2388,8 +2266,7 @@ Void TComDataCU::getInterMergeCandidates( UInt uiAbsPartIdx, UInt uiPUIdx, TComM
 
   // above right
   UInt uiAboveRightPartIdx = 0;
-  TComDataCU* pcCUAboveRight = 0;
-  pcCUAboveRight = getPUAboveRight( uiAboveRightPartIdx, uiPartIdxRT );
+  const TComDataCU *pcCUAboveRight = getPUAboveRight( uiAboveRightPartIdx, uiPartIdxRT );
 
   Bool isAvailableB0 = pcCUAboveRight &&
                        pcCUAboveRight->isDiffMER(xP+nPSW, yP-1, xP, yP) &&
@@ -2401,10 +2278,10 @@ Void TComDataCU::getInterMergeCandidates( UInt uiAbsPartIdx, UInt uiPUIdx, TComM
     // get Inter Dir
     puhInterDirNeighbours[iCount] = pcCUAboveRight->getInterDir( uiAboveRightPartIdx );
     // get Mv from Left
-    pcCUAboveRight->getMvField( pcCUAboveRight, uiAboveRightPartIdx, REF_PIC_LIST_0, pcMvFieldNeighbours[iCount<<1] );
+    TComDataCU::getMvField( pcCUAboveRight, uiAboveRightPartIdx, REF_PIC_LIST_0, pcMvFieldNeighbours[iCount<<1] );
     if ( getSlice()->isInterB() )
     {
-      pcCUAboveRight->getMvField( pcCUAboveRight, uiAboveRightPartIdx, REF_PIC_LIST_1, pcMvFieldNeighbours[(iCount<<1)+1] );
+      TComDataCU::getMvField( pcCUAboveRight, uiAboveRightPartIdx, REF_PIC_LIST_1, pcMvFieldNeighbours[(iCount<<1)+1] );
     }
     if ( mrgCandIdx == iCount )
     {
@@ -2420,8 +2297,7 @@ Void TComDataCU::getInterMergeCandidates( UInt uiAbsPartIdx, UInt uiPUIdx, TComM
 
   //left bottom
   UInt uiLeftBottomPartIdx = 0;
-  TComDataCU* pcCULeftBottom = 0;
-  pcCULeftBottom = this->getPUBelowLeft( uiLeftBottomPartIdx, uiPartIdxLB );
+  const TComDataCU *pcCULeftBottom = this->getPUBelowLeft( uiLeftBottomPartIdx, uiPartIdxLB );
 
   Bool isAvailableA0 = pcCULeftBottom &&
                        pcCULeftBottom->isDiffMER(xP-1, yP+nPSH, xP, yP) &&
@@ -2433,10 +2309,10 @@ Void TComDataCU::getInterMergeCandidates( UInt uiAbsPartIdx, UInt uiPUIdx, TComM
     // get Inter Dir
     puhInterDirNeighbours[iCount] = pcCULeftBottom->getInterDir( uiLeftBottomPartIdx );
     // get Mv from Left
-    pcCULeftBottom->getMvField( pcCULeftBottom, uiLeftBottomPartIdx, REF_PIC_LIST_0, pcMvFieldNeighbours[iCount<<1] );
+    TComDataCU::getMvField( pcCULeftBottom, uiLeftBottomPartIdx, REF_PIC_LIST_0, pcMvFieldNeighbours[iCount<<1] );
     if ( getSlice()->isInterB() )
     {
-      pcCULeftBottom->getMvField( pcCULeftBottom, uiLeftBottomPartIdx, REF_PIC_LIST_1, pcMvFieldNeighbours[(iCount<<1)+1] );
+      TComDataCU::getMvField( pcCULeftBottom, uiLeftBottomPartIdx, REF_PIC_LIST_1, pcMvFieldNeighbours[(iCount<<1)+1] );
     }
     if ( mrgCandIdx == iCount )
     {
@@ -2454,8 +2330,7 @@ Void TComDataCU::getInterMergeCandidates( UInt uiAbsPartIdx, UInt uiPUIdx, TComM
   if( iCount < 4 )
   {
     UInt uiAboveLeftPartIdx = 0;
-    TComDataCU* pcCUAboveLeft = 0;
-    pcCUAboveLeft = getPUAboveLeft( uiAboveLeftPartIdx, uiAbsPartAddr );
+    const TComDataCU *pcCUAboveLeft = getPUAboveLeft( uiAboveLeftPartIdx, uiAbsPartAddr );
 
     Bool isAvailableB2 = pcCUAboveLeft &&
                          pcCUAboveLeft->isDiffMER(xP-1, yP-1, xP, yP) &&
@@ -2468,10 +2343,10 @@ Void TComDataCU::getInterMergeCandidates( UInt uiAbsPartIdx, UInt uiPUIdx, TComM
       // get Inter Dir
       puhInterDirNeighbours[iCount] = pcCUAboveLeft->getInterDir( uiAboveLeftPartIdx );
       // get Mv from Left
-      pcCUAboveLeft->getMvField( pcCUAboveLeft, uiAboveLeftPartIdx, REF_PIC_LIST_0, pcMvFieldNeighbours[iCount<<1] );
+      TComDataCU::getMvField( pcCUAboveLeft, uiAboveLeftPartIdx, REF_PIC_LIST_0, pcMvFieldNeighbours[iCount<<1] );
       if ( getSlice()->isInterB() )
       {
-        pcCUAboveLeft->getMvField( pcCUAboveLeft, uiAboveLeftPartIdx, REF_PIC_LIST_1, pcMvFieldNeighbours[(iCount<<1)+1] );
+        TComDataCU::getMvField( pcCUAboveLeft, uiAboveLeftPartIdx, REF_PIC_LIST_1, pcMvFieldNeighbours[(iCount<<1)+1] );
       }
       if ( mrgCandIdx == iCount )
       {
@@ -2651,7 +2526,7 @@ Void TComDataCU::getInterMergeCandidates( UInt uiAbsPartIdx, UInt uiPUIdx, TComM
  * \param xN, yN   location of the upper-left corner pixel of a neighboring PU
  * \param xP, yP   location of the upper-left corner pixel of the current PU
  */
-Bool TComDataCU::isDiffMER(Int xN, Int yN, Int xP, Int yP)
+Bool TComDataCU::isDiffMER(Int xN, Int yN, Int xP, Int yP) const
 {
 
   UInt plevel = this->getSlice()->getPPS()->getLog2ParallelMergeLevelMinus2() + 2;
@@ -2671,7 +2546,7 @@ Bool TComDataCU::isDiffMER(Int xN, Int yN, Int xP, Int yP)
  * \param xP, yP        location of the upper-left corner pixel of the current PU
  * \param nPSW, nPSH    size of the current PU
  */
-Void TComDataCU::getPartPosition( UInt partIdx, Int& xP, Int& yP, Int& nPSW, Int& nPSH)
+Void TComDataCU::getPartPosition( UInt partIdx, Int& xP, Int& yP, Int& nPSW, Int& nPSH) const
 {
   UInt col = m_uiCUPelX;
   UInt row = m_uiCUPelY;
@@ -2732,84 +2607,79 @@ Void TComDataCU::getPartPosition( UInt partIdx, Int& xP, Int& yP, Int& nPSW, Int
   }
 }
 
-/** Constructs a list of candidates for AMVP
+/** Constructs a list of candidates for AMVP (See specification, section "Derivation process for motion vector predictor candidates")
  * \param uiPartIdx
  * \param uiPartAddr
  * \param eRefPicList
  * \param iRefIdx
  * \param pInfo
  */
-Void TComDataCU::fillMvpCand ( UInt uiPartIdx, UInt uiPartAddr, RefPicList eRefPicList, Int iRefIdx, AMVPInfo* pInfo )
+Void TComDataCU::fillMvpCand ( const UInt partIdx, const UInt partAddr, const RefPicList eRefPicList, const Int refIdx, AMVPInfo* pInfo ) const
 {
-  TComMv cMvPred;
-  Bool bAddedSmvp = false;
-
   pInfo->iN = 0;
-  if (iRefIdx < 0)
+  if (refIdx < 0)
   {
     return;
   }
 
   //-- Get Spatial MV
-  UInt uiPartIdxLT, uiPartIdxRT, uiPartIdxLB;
-  const UInt numPartInCtuWidth  = m_pcPic->getNumPartInCtuWidth();
-  const UInt numPartInCtuHeight = m_pcPic->getNumPartInCtuHeight();
-  Bool bAdded = false;
+  UInt partIdxLT, partIdxRT, partIdxLB;
+  deriveLeftRightTopIdx( partIdx, partIdxLT, partIdxRT );
+  deriveLeftBottomIdx( partIdx, partIdxLB );
 
-  deriveLeftRightTopIdx( uiPartIdx, uiPartIdxLT, uiPartIdxRT );
-  deriveLeftBottomIdx( uiPartIdx, uiPartIdxLB );
-
-  TComDataCU* tmpCU = NULL;
-  UInt idx;
-  tmpCU = getPUBelowLeft(idx, uiPartIdxLB);
-  bAddedSmvp = (tmpCU != NULL) && (tmpCU->isInter(idx));
-
-  if (!bAddedSmvp)
+  Bool isScaledFlagLX = false; /// variable name from specification; true when the PUs below left or left are available (availableA0 || availableA1).
   {
-    tmpCU = getPULeft(idx, uiPartIdxLB);
-    bAddedSmvp = (tmpCU != NULL) && (tmpCU->isInter(idx));
+    UInt idx;
+    const TComDataCU* tmpCU = getPUBelowLeft(idx, partIdxLB);
+    isScaledFlagLX = (tmpCU != NULL) && (tmpCU->isInter(idx));
+    if (!isScaledFlagLX)
+    {
+      tmpCU = getPULeft(idx, partIdxLB);
+      isScaledFlagLX = (tmpCU != NULL) && (tmpCU->isInter(idx));
+    }
   }
 
   // Left predictor search
-  bAdded = xAddMVPCand( pInfo, eRefPicList, iRefIdx, uiPartIdxLB, MD_BELOW_LEFT);
-  if (!bAdded)
+  if (isScaledFlagLX)
   {
-    bAdded = xAddMVPCand( pInfo, eRefPicList, iRefIdx, uiPartIdxLB, MD_LEFT );
-  }
-
-  if(!bAdded)
-  {
-    bAdded = xAddMVPCandOrder( pInfo, eRefPicList, iRefIdx, uiPartIdxLB, MD_BELOW_LEFT);
+    Bool bAdded = xAddMVPCandUnscaled( *pInfo, eRefPicList, refIdx, partIdxLB, MD_BELOW_LEFT);
     if (!bAdded)
     {
-      xAddMVPCandOrder( pInfo, eRefPicList, iRefIdx, uiPartIdxLB, MD_LEFT );
+      bAdded = xAddMVPCandUnscaled( *pInfo, eRefPicList, refIdx, partIdxLB, MD_LEFT );
+      if(!bAdded)
+      {
+        bAdded = xAddMVPCandWithScaling( *pInfo, eRefPicList, refIdx, partIdxLB, MD_BELOW_LEFT);
+        if (!bAdded)
+        {
+          xAddMVPCandWithScaling( *pInfo, eRefPicList, refIdx, partIdxLB, MD_LEFT );
+        }
+      }
     }
   }
 
   // Above predictor search
-  bAdded = xAddMVPCand( pInfo, eRefPicList, iRefIdx, uiPartIdxRT, MD_ABOVE_RIGHT);
-
-  if (!bAdded)
   {
-    bAdded = xAddMVPCand( pInfo, eRefPicList, iRefIdx, uiPartIdxRT, MD_ABOVE);
-  }
-
-  if(!bAdded)
-  {
-    xAddMVPCand( pInfo, eRefPicList, iRefIdx, uiPartIdxLT, MD_ABOVE_LEFT);
-  }
-
-  if(!bAddedSmvp)
-  {
-    bAdded = xAddMVPCandOrder( pInfo, eRefPicList, iRefIdx, uiPartIdxRT, MD_ABOVE_RIGHT);
+    Bool bAdded = xAddMVPCandUnscaled( *pInfo, eRefPicList, refIdx, partIdxRT, MD_ABOVE_RIGHT);
     if (!bAdded)
     {
-      bAdded = xAddMVPCandOrder( pInfo, eRefPicList, iRefIdx, uiPartIdxRT, MD_ABOVE);
+      bAdded = xAddMVPCandUnscaled( *pInfo, eRefPicList, refIdx, partIdxRT, MD_ABOVE);
+      if(!bAdded)
+      {
+        xAddMVPCandUnscaled( *pInfo, eRefPicList, refIdx, partIdxLT, MD_ABOVE_LEFT);
+      }
     }
+  }
 
-    if(!bAdded)
+  if(!isScaledFlagLX)
+  {
+    Bool bAdded = xAddMVPCandWithScaling( *pInfo, eRefPicList, refIdx, partIdxRT, MD_ABOVE_RIGHT);
+    if (!bAdded)
     {
-      xAddMVPCandOrder( pInfo, eRefPicList, iRefIdx, uiPartIdxLT, MD_ABOVE_LEFT);
+      bAdded = xAddMVPCandWithScaling( *pInfo, eRefPicList, refIdx, partIdxRT, MD_ABOVE);
+      if(!bAdded)
+      {
+        xAddMVPCandWithScaling( *pInfo, eRefPicList, refIdx, partIdxLT, MD_ABOVE_LEFT);
+      }
     }
   }
 
@@ -2821,63 +2691,59 @@ Void TComDataCU::fillMvpCand ( UInt uiPartIdx, UInt uiPartAddr, RefPicList eRefP
     }
   }
 
-  if ( getSlice()->getEnableTMVPFlag() )
+  if (pInfo->iN < AMVP_MAX_NUM_CANDS && getSlice()->getEnableTMVPFlag() )
   {
     // Get Temporal Motion Predictor
-    Int iRefIdx_Col = iRefIdx;
+    const UInt numPartInCtuWidth  = m_pcPic->getNumPartInCtuWidth();
+    const UInt numPartInCtuHeight = m_pcPic->getNumPartInCtuHeight();
+    const Int refIdx_Col = refIdx;
     TComMv cColMv;
-    UInt uiPartIdxRB;
-    UInt uiAbsPartIdx;
-    UInt uiAbsPartAddr;
+    UInt partIdxRB;
+    UInt absPartIdx;
 
-    deriveRightBottomIdx( uiPartIdx, uiPartIdxRB );
-    uiAbsPartAddr = m_absZIdxInCtu + uiPartAddr;
+    deriveRightBottomIdx( partIdx, partIdxRB );
+    UInt absPartAddr = m_absZIdxInCtu + partAddr;
 
     //----  co-located RightBottom Temporal Predictor (H) ---//
-    uiAbsPartIdx = g_auiZscanToRaster[uiPartIdxRB];
+    absPartIdx = g_auiZscanToRaster[partIdxRB];
     Int ctuRsAddr = -1;
-    if (  ( ( m_pcPic->getCtu(m_ctuRsAddr)->getCUPelX() + g_auiRasterToPelX[uiAbsPartIdx] + m_pcPic->getMinCUWidth () ) < m_pcSlice->getSPS()->getPicWidthInLumaSamples () )  // image boundary check
-       && ( ( m_pcPic->getCtu(m_ctuRsAddr)->getCUPelY() + g_auiRasterToPelY[uiAbsPartIdx] + m_pcPic->getMinCUHeight() ) < m_pcSlice->getSPS()->getPicHeightInLumaSamples() ) )
+    if (  ( ( m_pcPic->getCtu(m_ctuRsAddr)->getCUPelX() + g_auiRasterToPelX[absPartIdx] + m_pcPic->getMinCUWidth () ) < m_pcSlice->getSPS()->getPicWidthInLumaSamples () )  // image boundary check
+       && ( ( m_pcPic->getCtu(m_ctuRsAddr)->getCUPelY() + g_auiRasterToPelY[absPartIdx] + m_pcPic->getMinCUHeight() ) < m_pcSlice->getSPS()->getPicHeightInLumaSamples() ) )
     {
-      if ( ( uiAbsPartIdx % numPartInCtuWidth < numPartInCtuWidth - 1 ) &&  // is not at the last column of CTU
-           ( uiAbsPartIdx / numPartInCtuWidth < numPartInCtuHeight - 1 ) )  // is not at the last row    of CTU
+      if ( ( absPartIdx % numPartInCtuWidth < numPartInCtuWidth - 1 ) &&  // is not at the last column of CTU
+           ( absPartIdx / numPartInCtuWidth < numPartInCtuHeight - 1 ) )  // is not at the last row    of CTU
       {
-        uiAbsPartAddr = g_auiRasterToZscan[ uiAbsPartIdx + numPartInCtuWidth + 1 ];
+        absPartAddr = g_auiRasterToZscan[ absPartIdx + numPartInCtuWidth + 1 ];
         ctuRsAddr = getCtuRsAddr();
       }
-      else if ( uiAbsPartIdx % numPartInCtuWidth < numPartInCtuWidth - 1 )  // is not at the last column of CTU But is last row of CTU
+      else if ( absPartIdx % numPartInCtuWidth < numPartInCtuWidth - 1 )  // is not at the last column of CTU But is last row of CTU
       {
-        uiAbsPartAddr = g_auiRasterToZscan[ (uiAbsPartIdx + numPartInCtuWidth + 1) % m_pcPic->getNumPartitionsInCtu() ];
+        absPartAddr = g_auiRasterToZscan[ (absPartIdx + numPartInCtuWidth + 1) % m_pcPic->getNumPartitionsInCtu() ];
       }
-      else if ( uiAbsPartIdx / numPartInCtuWidth < numPartInCtuHeight - 1 ) // is not at the last row of CTU But is last column of CTU
+      else if ( absPartIdx / numPartInCtuWidth < numPartInCtuHeight - 1 ) // is not at the last row of CTU But is last column of CTU
       {
-        uiAbsPartAddr = g_auiRasterToZscan[ uiAbsPartIdx + 1 ];
+        absPartAddr = g_auiRasterToZscan[ absPartIdx + 1 ];
         ctuRsAddr = getCtuRsAddr() + 1;
       }
       else //is the right bottom corner of CTU
       {
-        uiAbsPartAddr = 0;
+        absPartAddr = 0;
       }
     }
-    if ( ctuRsAddr >= 0 && xGetColMVP( eRefPicList, ctuRsAddr, uiAbsPartAddr, cColMv, iRefIdx_Col ) )
+    if ( ctuRsAddr >= 0 && xGetColMVP( eRefPicList, ctuRsAddr, absPartAddr, cColMv, refIdx_Col ) )
     {
       pInfo->m_acMvCand[pInfo->iN++] = cColMv;
     }
     else
     {
       UInt uiPartIdxCenter;
-      xDeriveCenterIdx( uiPartIdx, uiPartIdxCenter );
-      if (xGetColMVP( eRefPicList, getCtuRsAddr(), uiPartIdxCenter,  cColMv, iRefIdx_Col ))
+      xDeriveCenterIdx( partIdx, uiPartIdxCenter );
+      if (xGetColMVP( eRefPicList, getCtuRsAddr(), uiPartIdxCenter,  cColMv, refIdx_Col ))
       {
         pInfo->m_acMvCand[pInfo->iN++] = cColMv;
       }
     }
     //----  co-located RightBottom Temporal Predictor  ---//
-  }
-
-  if (pInfo->iN > AMVP_MAX_NUM_CANDS)
-  {
-    pInfo->iN = AMVP_MAX_NUM_CANDS;
   }
 
   while (pInfo->iN < AMVP_MAX_NUM_CANDS)
@@ -2889,7 +2755,7 @@ Void TComDataCU::fillMvpCand ( UInt uiPartIdx, UInt uiPartAddr, RefPicList eRefP
 }
 
 
-Bool TComDataCU::isBipredRestriction(UInt puIdx)
+Bool TComDataCU::isBipredRestriction(UInt puIdx) const
 {
   Int width = 0;
   Int height = 0;
@@ -2904,7 +2770,7 @@ Bool TComDataCU::isBipredRestriction(UInt puIdx)
 }
 
 
-Void TComDataCU::clipMv    (TComMv&  rcMv)
+Void TComDataCU::clipMv    (TComMv&  rcMv) const
 {
   const TComSPS &sps=*(m_pcSlice->getSPS());
   Int  iMvShift = 2;
@@ -2920,7 +2786,7 @@ Void TComDataCU::clipMv    (TComMv&  rcMv)
 }
 
 
-UInt TComDataCU::getIntraSizeIdx(UInt uiAbsPartIdx)
+UInt TComDataCU::getIntraSizeIdx(UInt uiAbsPartIdx) const
 {
   UInt uiShift = ( m_pePartSize[uiAbsPartIdx]==SIZE_NxN ? 1 : 0 );
 
@@ -2957,7 +2823,7 @@ Void TComDataCU::setIPCMFlagSubParts  (Bool bIpcmFlag, UInt uiAbsPartIdx, UInt u
  * \param uiPartIdx Partition index
  * \returns true if the current the block is skipped
  */
-Bool TComDataCU::isSkipped( UInt uiPartIdx )
+Bool TComDataCU::isSkipped( UInt uiPartIdx ) const
 {
   return ( getSkipFlag( uiPartIdx ) );
 }
@@ -2966,35 +2832,35 @@ Bool TComDataCU::isSkipped( UInt uiPartIdx )
 // Protected member functions
 // ====================================================================================================================
 
-Bool TComDataCU::xAddMVPCand( AMVPInfo* pInfo, RefPicList eRefPicList, Int iRefIdx, UInt uiPartUnitIdx, MVP_DIR eDir )
+Bool TComDataCU::xAddMVPCandUnscaled( AMVPInfo &info, const RefPicList eRefPicList, const Int iRefIdx, const UInt uiPartUnitIdx, const MVP_DIR eDir ) const
 {
-  TComDataCU* pcTmpCU = NULL;
-  UInt uiIdx;
+  const TComDataCU* neibCU = NULL;
+  UInt neibPUPartIdx;
   switch( eDir )
   {
     case MD_LEFT:
     {
-      pcTmpCU = getPULeft(uiIdx, uiPartUnitIdx);
+      neibCU = getPULeft(neibPUPartIdx, uiPartUnitIdx);
       break;
     }
     case MD_ABOVE:
     {
-      pcTmpCU = getPUAbove(uiIdx, uiPartUnitIdx);
+      neibCU = getPUAbove(neibPUPartIdx, uiPartUnitIdx);
       break;
     }
     case MD_ABOVE_RIGHT:
     {
-      pcTmpCU = getPUAboveRight(uiIdx, uiPartUnitIdx);
+      neibCU = getPUAboveRight(neibPUPartIdx, uiPartUnitIdx);
       break;
     }
     case MD_BELOW_LEFT:
     {
-      pcTmpCU = getPUBelowLeft(uiIdx, uiPartUnitIdx);
+      neibCU = getPUBelowLeft(neibPUPartIdx, uiPartUnitIdx);
       break;
     }
     case MD_ABOVE_LEFT:
     {
-      pcTmpCU = getPUAboveLeft(uiIdx, uiPartUnitIdx);
+      neibCU = getPUAboveLeft(neibPUPartIdx, uiPartUnitIdx);
       break;
     }
     default:
@@ -3003,44 +2869,26 @@ Bool TComDataCU::xAddMVPCand( AMVPInfo* pInfo, RefPicList eRefPicList, Int iRefI
     }
   }
 
-  if ( pcTmpCU == NULL )
+  if ( neibCU == NULL )
   {
     return false;
   }
 
-  if ( pcTmpCU->getCUMvField(eRefPicList)->getRefIdx(uiIdx) >= 0 && m_pcSlice->getRefPic( eRefPicList, iRefIdx)->getPOC() == pcTmpCU->getSlice()->getRefPOC( eRefPicList, pcTmpCU->getCUMvField(eRefPicList)->getRefIdx(uiIdx) ))
+  const Int        currRefPOC     = m_pcSlice->getRefPic( eRefPicList, iRefIdx)->getPOC();
+  const RefPicList eRefPicList2nd = (eRefPicList == REF_PIC_LIST_0) ? REF_PIC_LIST_1 : REF_PIC_LIST_0;
+
+  for(Int predictorSource=0; predictorSource<2; predictorSource++) // examine the indicated reference picture list, then if not available, examine the other list.
   {
-    TComMv cMvPred = pcTmpCU->getCUMvField(eRefPicList)->getMv(uiIdx);
+    const RefPicList eRefPicListIndex = (predictorSource==0) ? eRefPicList : eRefPicList2nd;
+    const Int        neibRefIdx       = neibCU->getCUMvField(eRefPicListIndex)->getRefIdx(neibPUPartIdx);
 
-    pInfo->m_acMvCand[ pInfo->iN++] = cMvPred;
-    return true;
-  }
-
-  RefPicList eRefPicList2nd = REF_PIC_LIST_0;
-  if(       eRefPicList == REF_PIC_LIST_0 )
-  {
-    eRefPicList2nd = REF_PIC_LIST_1;
-  }
-  else if ( eRefPicList == REF_PIC_LIST_1)
-  {
-    eRefPicList2nd = REF_PIC_LIST_0;
-  }
-
-
-  Int iCurrRefPOC = m_pcSlice->getRefPic( eRefPicList, iRefIdx)->getPOC();
-  Int iNeibRefPOC;
-
-
-  if( pcTmpCU->getCUMvField(eRefPicList2nd)->getRefIdx(uiIdx) >= 0 )
-  {
-    iNeibRefPOC = pcTmpCU->getSlice()->getRefPOC( eRefPicList2nd, pcTmpCU->getCUMvField(eRefPicList2nd)->getRefIdx(uiIdx) );
-    if( iNeibRefPOC == iCurrRefPOC ) // Same Reference Frame But Diff List//
+    if ( neibRefIdx >= 0 && currRefPOC == neibCU->getSlice()->getRefPOC( eRefPicListIndex, neibRefIdx ))
     {
-      TComMv cMvPred = pcTmpCU->getCUMvField(eRefPicList2nd)->getMv(uiIdx);
-      pInfo->m_acMvCand[ pInfo->iN++] = cMvPred;
+      info.m_acMvCand[info.iN++] = neibCU->getCUMvField(eRefPicListIndex)->getMv(neibPUPartIdx);
       return true;
     }
   }
+
   return false;
 }
 
@@ -3052,35 +2900,35 @@ Bool TComDataCU::xAddMVPCand( AMVPInfo* pInfo, RefPicList eRefPicList, Int iRefI
  * \param eDir
  * \returns Bool
  */
-Bool TComDataCU::xAddMVPCandOrder( AMVPInfo* pInfo, RefPicList eRefPicList, Int iRefIdx, UInt uiPartUnitIdx, MVP_DIR eDir )
+Bool TComDataCU::xAddMVPCandWithScaling( AMVPInfo &info, const RefPicList eRefPicList, const Int iRefIdx, const UInt uiPartUnitIdx, const MVP_DIR eDir ) const
 {
-  TComDataCU* pcTmpCU = NULL;
-  UInt uiIdx;
+  const TComDataCU* neibCU = NULL;
+  UInt neibPUPartIdx;
   switch( eDir )
   {
   case MD_LEFT:
     {
-      pcTmpCU = getPULeft(uiIdx, uiPartUnitIdx);
+      neibCU = getPULeft(neibPUPartIdx, uiPartUnitIdx);
       break;
     }
   case MD_ABOVE:
     {
-      pcTmpCU = getPUAbove(uiIdx, uiPartUnitIdx);
+      neibCU = getPUAbove(neibPUPartIdx, uiPartUnitIdx);
       break;
     }
   case MD_ABOVE_RIGHT:
     {
-      pcTmpCU = getPUAboveRight(uiIdx, uiPartUnitIdx);
+      neibCU = getPUAboveRight(neibPUPartIdx, uiPartUnitIdx);
       break;
     }
   case MD_BELOW_LEFT:
     {
-      pcTmpCU = getPUBelowLeft(uiIdx, uiPartUnitIdx);
+      neibCU = getPUBelowLeft(neibPUPartIdx, uiPartUnitIdx);
       break;
     }
   case MD_ABOVE_LEFT:
     {
-      pcTmpCU = getPUAboveLeft(uiIdx, uiPartUnitIdx);
+      neibCU = getPUAboveLeft(neibPUPartIdx, uiPartUnitIdx);
       break;
     }
   default:
@@ -3089,125 +2937,80 @@ Bool TComDataCU::xAddMVPCandOrder( AMVPInfo* pInfo, RefPicList eRefPicList, Int 
     }
   }
 
-  if ( pcTmpCU == NULL )
+  if ( neibCU == NULL )
   {
     return false;
   }
 
-  RefPicList eRefPicList2nd = REF_PIC_LIST_0;
-  if(       eRefPicList == REF_PIC_LIST_0 )
-  {
-    eRefPicList2nd = REF_PIC_LIST_1;
-  }
-  else if ( eRefPicList == REF_PIC_LIST_1)
-  {
-    eRefPicList2nd = REF_PIC_LIST_0;
-  }
+  const RefPicList eRefPicList2nd = (eRefPicList == REF_PIC_LIST_0) ? REF_PIC_LIST_1 : REF_PIC_LIST_0;
 
-  Int iCurrPOC = m_pcSlice->getPOC();
-  Int iCurrRefPOC = m_pcSlice->getRefPic( eRefPicList, iRefIdx)->getPOC();
-  Int iNeibPOC = iCurrPOC;
-  Int iNeibRefPOC;
-  Bool bIsCurrRefLongTerm = m_pcSlice->getRefPic( eRefPicList, iRefIdx)->getIsLongTerm();
-  Bool bIsNeibRefLongTerm = false;
+  const Int  currPOC            = m_pcSlice->getPOC();
+  const Int  currRefPOC         = m_pcSlice->getRefPic( eRefPicList, iRefIdx)->getPOC();
+  const Bool bIsCurrRefLongTerm = m_pcSlice->getRefPic( eRefPicList, iRefIdx)->getIsLongTerm();
+  const Int  neibPOC            = currPOC;
 
-  //---------------  V1 (END) ------------------//
-  if( pcTmpCU->getCUMvField(eRefPicList)->getRefIdx(uiIdx) >= 0)
+  for(Int predictorSource=0; predictorSource<2; predictorSource++) // examine the indicated reference picture list, then if not available, examine the other list.
   {
-    iNeibRefPOC = pcTmpCU->getSlice()->getRefPOC( eRefPicList, pcTmpCU->getCUMvField(eRefPicList)->getRefIdx(uiIdx) );
-    TComMv cMvPred = pcTmpCU->getCUMvField(eRefPicList)->getMv(uiIdx);
-    TComMv rcMv;
-
-    bIsNeibRefLongTerm = pcTmpCU->getSlice()->getRefPic( eRefPicList, pcTmpCU->getCUMvField(eRefPicList)->getRefIdx(uiIdx) )->getIsLongTerm();
-    if ( bIsCurrRefLongTerm == bIsNeibRefLongTerm )
+    const RefPicList eRefPicListIndex = (predictorSource==0) ? eRefPicList : eRefPicList2nd;
+    const Int        neibRefIdx       = neibCU->getCUMvField(eRefPicListIndex)->getRefIdx(neibPUPartIdx);
+    if( neibRefIdx >= 0)
     {
-      if ( bIsCurrRefLongTerm || bIsNeibRefLongTerm )
+      const Bool bIsNeibRefLongTerm = neibCU->getSlice()->getRefPic( eRefPicListIndex, neibRefIdx )->getIsLongTerm();
+
+      if ( bIsCurrRefLongTerm == bIsNeibRefLongTerm )
       {
-        rcMv = cMvPred;
-      }
-      else
-      {
-        Int iScale = xGetDistScaleFactor( iCurrPOC, iCurrRefPOC, iNeibPOC, iNeibRefPOC );
-        if ( iScale == 4096 )
+        const TComMv &cMvPred = neibCU->getCUMvField(eRefPicListIndex)->getMv(neibPUPartIdx);
+        TComMv rcMv;
+        if ( bIsCurrRefLongTerm /* || bIsNeibRefLongTerm*/ )
         {
           rcMv = cMvPred;
         }
         else
         {
-          rcMv = cMvPred.scaleMv( iScale );
+          const Int neibRefPOC = neibCU->getSlice()->getRefPOC( eRefPicListIndex, neibRefIdx );
+          const Int scale      = xGetDistScaleFactor( currPOC, currRefPOC, neibPOC, neibRefPOC );
+          if ( scale == 4096 )
+          {
+            rcMv = cMvPred;
+          }
+          else
+          {
+            rcMv = cMvPred.scaleMv( scale );
+          }
         }
-      }
 
-      pInfo->m_acMvCand[ pInfo->iN++] = rcMv;
-      return true;
+        info.m_acMvCand[info.iN++] = rcMv;
+        return true;
+      }
     }
   }
-  //---------------------- V2(END) --------------------//
-  if( pcTmpCU->getCUMvField(eRefPicList2nd)->getRefIdx(uiIdx) >= 0)
-  {
-    iNeibRefPOC = pcTmpCU->getSlice()->getRefPOC( eRefPicList2nd, pcTmpCU->getCUMvField(eRefPicList2nd)->getRefIdx(uiIdx) );
-    TComMv cMvPred = pcTmpCU->getCUMvField(eRefPicList2nd)->getMv(uiIdx);
-    TComMv rcMv;
-
-    bIsNeibRefLongTerm = pcTmpCU->getSlice()->getRefPic( eRefPicList2nd, pcTmpCU->getCUMvField(eRefPicList2nd)->getRefIdx(uiIdx) )->getIsLongTerm();
-    if ( bIsCurrRefLongTerm == bIsNeibRefLongTerm )
-    {
-      if ( bIsCurrRefLongTerm || bIsNeibRefLongTerm )
-      {
-        rcMv = cMvPred;
-      }
-      else
-      {
-        Int iScale = xGetDistScaleFactor( iCurrPOC, iCurrRefPOC, iNeibPOC, iNeibRefPOC );
-        if ( iScale == 4096 )
-        {
-          rcMv = cMvPred;
-        }
-        else
-        {
-          rcMv = cMvPred.scaleMv( iScale );
-        }
-      }
-
-      pInfo->m_acMvCand[ pInfo->iN++] = rcMv;
-      return true;
-    }
-  }
-  //---------------------- V3(END) --------------------//
   return false;
 }
 
-Bool TComDataCU::xGetColMVP( RefPicList eRefPicList, Int ctuRsAddr, Int uiPartUnitIdx, TComMv& rcMv, Int& riRefIdx )
+Bool TComDataCU::xGetColMVP( const RefPicList eRefPicList, const Int ctuRsAddr, const Int partUnitIdx, TComMv& rcMv, const Int refIdx ) const
 {
-  UInt uiAbsPartAddr = uiPartUnitIdx;
-
-  RefPicList  eColRefPicList;
-  Int iColPOC, iColRefPOC, iCurrPOC, iCurrRefPOC, iScale;
-  TComMv cColMv;
+  const UInt absPartAddr = partUnitIdx;
 
   // use coldir.
-  TComPic *pColPic = getSlice()->getRefPic( RefPicList(getSlice()->isInterB() ? 1-getSlice()->getColFromL0Flag() : 0), getSlice()->getColRefIdx());
-  TComDataCU *pColCtu = pColPic->getCtu( ctuRsAddr );
-  if(pColCtu->getPic()==0||pColCtu->getPartitionSize(uiPartUnitIdx)==NUMBER_OF_PART_SIZES)
-  {
-    return false;
-  }
-  iCurrPOC = m_pcSlice->getPOC();
-  iColPOC = pColCtu->getSlice()->getPOC();
-
-  if (!pColCtu->isInter(uiAbsPartAddr))
+  const TComPic    * const pColPic = getSlice()->getRefPic( RefPicList(getSlice()->isInterB() ? 1-getSlice()->getColFromL0Flag() : 0), getSlice()->getColRefIdx());
+  const TComDataCU * const pColCtu = pColPic->getCtu( ctuRsAddr );
+  if(pColCtu->getPic()==0 || pColCtu->getPartitionSize(partUnitIdx)==NUMBER_OF_PART_SIZES)
   {
     return false;
   }
 
-  eColRefPicList = getSlice()->getCheckLDC() ? eRefPicList : RefPicList(getSlice()->getColFromL0Flag());
+  if (!pColCtu->isInter(absPartAddr))
+  {
+    return false;
+  }
 
-  Int iColRefIdx = pColCtu->getCUMvField(RefPicList(eColRefPicList))->getRefIdx(uiAbsPartAddr);
+  RefPicList eColRefPicList = getSlice()->getCheckLDC() ? eRefPicList : RefPicList(getSlice()->getColFromL0Flag());
+  Int iColRefIdx            = pColCtu->getCUMvField(RefPicList(eColRefPicList))->getRefIdx(absPartAddr);
 
   if (iColRefIdx < 0 )
   {
     eColRefPicList = RefPicList(1 - eColRefPicList);
-    iColRefIdx = pColCtu->getCUMvField(RefPicList(eColRefPicList))->getRefIdx(uiAbsPartAddr);
+    iColRefIdx = pColCtu->getCUMvField(RefPicList(eColRefPicList))->getRefIdx(absPartAddr);
 
     if (iColRefIdx < 0 )
     {
@@ -3215,62 +3018,41 @@ Bool TComDataCU::xGetColMVP( RefPicList eRefPicList, Int ctuRsAddr, Int uiPartUn
     }
   }
 
-  // Scale the vector.
-  iColRefPOC = pColCtu->getSlice()->getRefPOC(eColRefPicList, iColRefIdx);
-  cColMv = pColCtu->getCUMvField(eColRefPicList)->getMv(uiAbsPartAddr);
-
-  iCurrRefPOC = m_pcSlice->getRefPic(eRefPicList, riRefIdx)->getPOC();
-
-  Bool bIsCurrRefLongTerm = m_pcSlice->getRefPic(eRefPicList, riRefIdx)->getIsLongTerm();
-  Bool bIsColRefLongTerm = pColCtu->getSlice()->getIsUsedAsLongTerm(eColRefPicList, iColRefIdx);
+  const Bool bIsCurrRefLongTerm = m_pcSlice->getRefPic(eRefPicList, refIdx)->getIsLongTerm();
+  const Bool bIsColRefLongTerm  = pColCtu->getSlice()->getIsUsedAsLongTerm(eColRefPicList, iColRefIdx);
 
   if ( bIsCurrRefLongTerm != bIsColRefLongTerm )
   {
     return false;
   }
 
-  if ( bIsCurrRefLongTerm || bIsColRefLongTerm )
+  // Scale the vector.
+  const TComMv &cColMv = pColCtu->getCUMvField(eColRefPicList)->getMv(absPartAddr);
+  if ( bIsCurrRefLongTerm /*|| bIsColRefLongTerm*/ )
   {
     rcMv = cColMv;
   }
   else
   {
-    iScale = xGetDistScaleFactor(iCurrPOC, iCurrRefPOC, iColPOC, iColRefPOC);
-    if ( iScale == 4096 )
+    const Int currPOC    = m_pcSlice->getPOC();
+    const Int colPOC     = pColCtu->getSlice()->getPOC();
+    const Int colRefPOC  = pColCtu->getSlice()->getRefPOC(eColRefPicList, iColRefIdx);
+    const Int currRefPOC = m_pcSlice->getRefPic(eRefPicList, refIdx)->getPOC();
+    const Int scale      = xGetDistScaleFactor(currPOC, currRefPOC, colPOC, colRefPOC);
+    if ( scale == 4096 )
     {
       rcMv = cColMv;
     }
     else
     {
-      rcMv = cColMv.scaleMv( iScale );
+      rcMv = cColMv.scaleMv( scale );
     }
   }
 
   return true;
 }
 
-UInt TComDataCU::xGetMvdBits(TComMv cMvd)
-{
-  return ( xGetComponentBits(cMvd.getHor()) + xGetComponentBits(cMvd.getVer()) );
-}
-
-UInt TComDataCU::xGetComponentBits(Int iVal)
-{
-  UInt uiLength = 1;
-  UInt uiTemp   = ( iVal <= 0) ? (-iVal<<1)+1: (iVal<<1);
-
-  assert ( uiTemp );
-
-  while ( 1 != uiTemp )
-  {
-    uiTemp >>= 1;
-    uiLength += 2;
-  }
-
-  return uiLength;
-}
-
-
+// Static member
 Int TComDataCU::xGetDistScaleFactor(Int iCurrPOC, Int iCurrRefPOC, Int iColPOC, Int iColRefPOC)
 {
   Int iDiffPocD = iColPOC - iColRefPOC;
@@ -3290,7 +3072,7 @@ Int TComDataCU::xGetDistScaleFactor(Int iCurrPOC, Int iCurrRefPOC, Int iColPOC, 
   }
 }
 
-Void TComDataCU::xDeriveCenterIdx( UInt uiPartIdx, UInt& ruiPartIdxCenter )
+Void TComDataCU::xDeriveCenterIdx( UInt uiPartIdx, UInt& ruiPartIdxCenter ) const
 {
   UInt uiPartAddr;
   Int  iPartWidth;
@@ -3372,3095 +3154,6 @@ UInt TComDataCU::getCoefScanIdx(const UInt uiAbsPartIdx, const UInt uiWidth, con
   {
     return SCAN_DIAG;
   }
-}
-
-/* Get Index of Motion Vector and ruiCost in arrays regarding CU info 
-  */
-Int TComDataCU::getIndexBlock(Int iPartIdx)
-{
-    /* Create Int that concatenates CU info and return respective index 
-     PartSize   Depth   PartIdx  zOrder  Height  Width
-        9         8        7     6 5 4    3 2     1 0
-    */
-    
-    Int index = 0;
-    Int tmpIdx = 0;
-    tmpIdx = static_cast<PartSize>( m_pePartSize[0] ) + ((Int)m_puhDepth[0]* 10) + (iPartIdx * 100);
-    tmpIdx = (Int)m_absZIdxInCtu + (tmpIdx * 1000);
-    tmpIdx = (Int)m_puhHeight[0] + (tmpIdx * 100);
-    tmpIdx = (Int)m_puhWidth[0] + (tmpIdx * 100);
- 
-#if AMP_ENC_SPEEDUP
-
-    switch(tmpIdx){
-    case   6464: 
-        index =	424;
-        break;
-    case   1020006464: 
-        index =	422;
-        break;
-    case   20006464: 
-        index =	423;
-        break;
-    case   1010006464: 
-        index =	420;
-        break;
-    case   10006464: 
-        index =	421;
-        break;
-    case   101923232: 
-        index =	419;
-        break;
-    case   101283232: 
-        index =	418;
-        break;
-    case   100643232: 
-        index =	417;
-        break;
-    case   100003232: 
-        index =	416;
-        break;
-    case   1121923232: 
-        index =	415;
-        break;
-    case   121923232: 
-        index =	414;
-        break;
-    case   1121283232: 
-        index =	413;
-        break;
-    case   121283232: 
-        index =	412;
-        break;
-    case   1120643232: 
-        index =	411;
-        break;
-    case   120643232: 
-        index =	410;
-        break;
-    case   1120003232: 
-        index =	409;
-        break;
-    case   120003232: 
-        index =	408;
-        break;
-    case   1111923232: 
-        index =	407;
-        break;
-    case   1111283232: 
-        index =	406;
-        break;
-    case   111923232: 
-        index =	405;
-        break;
-    case   111283232: 
-        index =	404;
-        break;
-    case   1110643232: 
-        index =	403;
-        break;
-    case   1110003232: 
-        index =	402;
-        break;
-    case   110643232: 
-        index =	401;
-        break;
-    case   110003232: 
-        index =	400;
-        break;
-    case   202401616: 
-        index =	399;
-        break;
-    case   202241616: 
-        index =	398;
-        break;
-    case   201761616: 
-        index =	397;
-        break;
-    case   201601616: 
-        index =	396;
-        break;
-    case   202081616: 
-        index =	395;
-        break;
-    case   201921616: 
-        index =	394;
-        break;
-    case   201441616: 
-        index =	393;
-        break;
-    case   201281616: 
-        index =	392;
-        break;
-    case   201121616: 
-        index =	391;
-        break;
-    case   200961616: 
-        index =	390;
-        break;
-    case   200481616: 
-        index =	389;
-        break;
-    case   200321616: 
-        index =	388;
-        break;
-    case   200801616: 
-        index =	387;
-        break;
-    case   200641616: 
-        index =	386;
-        break;
-    case   200161616: 
-        index =	385;
-        break;
-    case   200001616: 
-        index =	384;
-        break;
-    case   1222401616: 
-        index =	383;
-        break;
-    case   222401616: 
-        index =	382;
-        break;
-    case   1222241616: 
-        index =	381;
-        break;
-    case   222241616: 
-        index =	380;
-        break;
-    case   1221761616: 
-        index =	379;
-        break;
-    case   221761616: 
-        index =	378;
-        break;
-    case   1221601616: 
-        index =	377;
-        break;
-    case   221601616: 
-        index =	376;
-        break;
-    case   1222081616: 
-        index =	375;
-        break;
-    case   222081616: 
-        index =	374;
-        break;
-    case   1221921616: 
-        index =	373;
-        break;
-    case   221921616: 
-        index =	372;
-        break;
-    case   1221441616: 
-        index =	371;
-        break;
-    case   221441616: 
-        index =	370;
-        break;
-    case   1221281616: 
-        index =	369;
-        break;
-    case   221281616: 
-        index =	368;
-        break;
-    case   1221121616: 
-        index =	367;
-        break;
-    case   221121616: 
-        index =	366;
-        break;
-    case   1220961616: 
-        index =	365;
-        break;
-    case   220961616: 
-        index =	364;
-        break;
-    case   1220481616: 
-        index =	363;
-        break;
-    case   220481616: 
-        index =	362;
-        break;
-    case   1220321616: 
-        index =	361;
-        break;
-    case   220321616: 
-        index =	360;
-        break;
-    case   1220801616: 
-        index =	359;
-        break;
-    case   220801616: 
-        index =	358;
-        break;
-    case   1220641616: 
-        index =	357;
-        break;
-    case   220641616: 
-        index =	356;
-        break;
-    case   1220161616: 
-        index =	355;
-        break;
-    case   220161616: 
-        index =	354;
-        break;
-    case   1220001616: 
-        index =	353;
-        break;
-    case   220001616: 
-        index =	352;
-        break;
-    case   1212401616: 
-        index =	351;
-        break;
-    case   1212241616: 
-        index =	350;
-        break;
-    case   1211761616: 
-        index =	349;
-        break;
-    case   1211601616: 
-        index =	348;
-        break;
-    case   212401616: 
-        index =	347;
-        break;
-    case   212241616: 
-        index =	346;
-        break;
-    case   211761616: 
-        index =	345;
-        break;
-    case   211601616: 
-        index =	344;
-        break;
-    case   1212081616: 
-        index =	343;
-        break;
-    case   1211921616: 
-        index =	342;
-        break;
-    case   1211441616: 
-        index =	341;
-        break;
-    case   1211281616: 
-        index =	340;
-        break;
-    case   212081616: 
-        index =	339;
-        break;
-    case   211921616: 
-        index =	338;
-        break;
-    case   211441616: 
-        index =	337;
-        break;
-    case   211281616: 
-        index =	336;
-        break;
-    case   1211121616: 
-        index =	335;
-        break;
-    case   1210961616: 
-        index =	334;
-        break;
-    case   1210481616: 
-        index =	333;
-        break;
-    case   1210321616: 
-        index =	332;
-        break;
-    case   211121616: 
-        index =	331;
-        break;
-    case   210961616: 
-        index =	330;
-        break;
-    case   210481616: 
-        index =	329;
-        break;
-    case   210321616: 
-        index =	328;
-        break;
-    case   1210801616: 
-        index =	327;
-        break;
-    case   1210641616: 
-        index =	326;
-        break;
-    case   1210161616: 
-        index =	325;
-        break;
-    case   1210001616: 
-        index =	324;
-        break;
-    case   210801616: 
-        index =	323;
-        break;
-    case   210641616: 
-        index =	322;
-        break;
-    case   210161616: 
-        index =	321;
-        break;
-    case   210001616: 
-        index =	320;
-        break;
-    case   302520808: 
-        index =	319;
-        break;
-    case   302480808: 
-        index =	318;
-        break;
-    case   302360808: 
-        index =	317;
-        break;
-    case   302320808: 
-        index =	316;
-        break;
-    case   301880808: 
-        index =	315;
-        break;
-    case   301840808: 
-        index =	314;
-        break;
-    case   301720808: 
-        index =	313;
-        break;
-    case   301680808: 
-        index =	312;
-        break;
-    case   302440808: 
-        index =	311;
-        break;
-    case   302400808: 
-        index =	310;
-        break;
-    case   302280808: 
-        index =	309;
-        break;
-    case   302240808: 
-        index =	308;
-        break;
-    case   301800808: 
-        index =	307;
-        break;
-    case   301760808: 
-        index =	306;
-        break;
-    case   301640808: 
-        index =	305;
-        break;
-    case   301600808: 
-        index =	304;
-        break;
-    case   302200808: 
-        index =	303;
-        break;
-    case   302160808: 
-        index =	302;
-        break;
-    case   302040808: 
-        index =	301;
-        break;
-    case   302000808: 
-        index =	300;
-        break;
-    case   301560808: 
-        index =	299;
-        break;
-    case   301520808: 
-        index =	298;
-        break;
-    case   301400808: 
-        index =	297;
-        break;
-    case   301360808: 
-        index =	296;
-        break;
-    case   302120808: 
-        index =	295;
-        break;
-    case   302080808: 
-        index =	294;
-        break;
-    case   301960808: 
-        index =	293;
-        break;
-    case   301920808: 
-        index =	292;
-        break;
-    case   301480808: 
-        index =	291;
-        break;
-    case   301440808: 
-        index =	290;
-        break;
-    case   301320808: 
-        index =	289;
-        break;
-    case   301280808: 
-        index =	288;
-        break;
-    case   301240808: 
-        index =	287;
-        break;
-    case   301200808: 
-        index =	286;
-        break;
-    case   301080808: 
-        index =	285;
-        break;
-    case   301040808: 
-        index =	284;
-        break;
-    case   300600808: 
-        index =	283;
-        break;
-    case   300560808: 
-        index =	282;
-        break;
-    case   300440808: 
-        index =	281;
-        break;
-    case   300400808: 
-        index =	280;
-        break;
-    case   301160808: 
-        index =	279;
-        break;
-    case   301120808: 
-        index =	278;
-        break;
-    case   301000808: 
-        index =	277;
-        break;
-    case   300960808: 
-        index =	276;
-        break;
-    case   300520808: 
-        index =	275;
-        break;
-    case   300480808: 
-        index =	274;
-        break;
-    case   300360808: 
-        index =	273;
-        break;
-    case   300320808: 
-        index =	272;
-        break;
-    case   300920808: 
-        index =	271;
-        break;
-    case   300880808: 
-        index =	270;
-        break;
-    case   300760808: 
-        index =	269;
-        break;
-    case   300720808: 
-        index =	268;
-        break;
-    case   300280808: 
-        index =	267;
-        break;
-    case   300240808: 
-        index =	266;
-        break;
-    case   300120808: 
-        index =	265;
-        break;
-    case   300080808: 
-        index =	264;
-        break;
-    case   300840808: 
-        index =	263;
-        break;
-    case   300800808: 
-        index =	262;
-        break;
-    case   300680808: 
-        index =	261;
-        break;
-    case   300640808: 
-        index =	260;
-        break;
-    case   300200808: 
-        index =	259;
-        break;
-    case   300160808: 
-        index =	258;
-        break;
-    case   300040808: 
-        index =	257;
-        break;
-    case   300000808: 
-        index =	256;
-        break;
-    case   1322520808: 
-        index =	255;
-        break;
-    case   322520808: 
-        index =	254;
-        break;
-    case   1322480808: 
-        index =	253;
-        break;
-    case   322480808: 
-        index =	252;
-        break;
-    case   1322360808: 
-        index =	251;
-        break;
-    case   322360808: 
-        index =	250;
-        break;
-    case   1322320808: 
-        index =	249;
-        break;
-    case   322320808: 
-        index =	248;
-        break;
-    case   1321880808: 
-        index =	247;
-        break;
-    case   321880808: 
-        index =	246;
-        break;
-    case   1321840808: 
-        index =	245;
-        break;
-    case   321840808: 
-        index =	244;
-        break;
-    case   1321720808: 
-        index =	243;
-        break;
-    case   321720808: 
-        index =	242;
-        break;
-    case   1321680808: 
-        index =	241;
-        break;
-    case   321680808: 
-        index =	240;
-        break;
-    case   1322440808: 
-        index =	239;
-        break;
-    case   322440808: 
-        index =	238;
-        break;
-    case   1322400808: 
-        index =	237;
-        break;
-    case   322400808: 
-        index =	236;
-        break;
-    case   1322280808: 
-        index =	235;
-        break;
-    case   322280808: 
-        index =	234;
-        break;
-    case   1322240808: 
-        index =	233;
-        break;
-    case   322240808: 
-        index =	232;
-        break;
-    case   1321800808: 
-        index =	231;
-        break;
-    case   321800808: 
-        index =	230;
-        break;
-    case   1321760808: 
-        index =	229;
-        break;
-    case   321760808: 
-        index =	228;
-        break;
-    case   1321640808: 
-        index =	227;
-        break;
-    case   321640808: 
-        index =	226;
-        break;
-    case   1321600808: 
-        index =	225;
-        break;
-    case   321600808: 
-        index =	224;
-        break;
-    case   1322200808: 
-        index =	223;
-        break;
-    case   322200808: 
-        index =	222;
-        break;
-    case   1322160808: 
-        index =	221;
-        break;
-    case   322160808: 
-        index =	220;
-        break;
-    case   1322040808: 
-        index =	219;
-        break;
-    case   322040808: 
-        index =	218;
-        break;
-    case   1322000808: 
-        index =	217;
-        break;
-    case   322000808: 
-        index =	216;
-        break;
-    case   1321560808: 
-        index =	215;
-        break;
-    case   321560808: 
-        index =	214;
-        break;
-    case   1321520808: 
-        index =	213;
-        break;
-    case   321520808: 
-        index =	212;
-        break;
-    case   1321400808: 
-        index =	211;
-        break;
-    case   321400808: 
-        index =	210;
-        break;
-    case   1321360808: 
-        index =	209;
-        break;
-    case   321360808: 
-        index =	208;
-        break;
-    case   1322120808: 
-        index =	207;
-        break;
-    case   322120808: 
-        index =	206;
-        break;
-    case   1322080808: 
-        index =	205;
-        break;
-    case   322080808: 
-        index =	204;
-        break;
-    case   1321960808: 
-        index =	203;
-        break;
-    case   321960808: 
-        index =	202;
-        break;
-    case   1321920808: 
-        index =	201;
-        break;
-    case   321920808: 
-        index =	200;
-        break;
-    case   1321480808: 
-        index =	199;
-        break;
-    case   321480808: 
-        index =	198;
-        break;
-    case   1321440808: 
-        index =	197;
-        break;
-    case   321440808: 
-        index =	196;
-        break;
-    case   1321320808: 
-        index =	195;
-        break;
-    case   321320808: 
-        index =	194;
-        break;
-    case   1321280808: 
-        index =	193;
-        break;
-    case   321280808: 
-        index =	192;
-        break;
-    case   1321240808: 
-        index =	191;
-        break;
-    case   321240808: 
-        index =	190;
-        break;
-    case   1321200808: 
-        index =	189;
-        break;
-    case   321200808: 
-        index =	188;
-        break;
-    case   1321080808: 
-        index =	187;
-        break;
-    case   321080808: 
-        index =	186;
-        break;
-    case   1321040808: 
-        index =	185;
-        break;
-    case   321040808: 
-        index =	184;
-        break;
-    case   1320600808: 
-        index =	183;
-        break;
-    case   320600808: 
-        index =	182;
-        break;
-    case   1320560808: 
-        index =	181;
-        break;
-    case   320560808: 
-        index =	180;
-        break;
-    case   1320440808: 
-        index =	179;
-        break;
-    case   320440808: 
-        index =	178;
-        break;
-    case   1320400808: 
-        index =	177;
-        break;
-    case   320400808: 
-        index =	176;
-        break;
-    case   1321160808: 
-        index =	175;
-        break;
-    case   321160808: 
-        index =	174;
-        break;
-    case   1321120808: 
-        index =	173;
-        break;
-    case   321120808: 
-        index =	172;
-        break;
-    case   1321000808: 
-        index =	171;
-        break;
-    case   321000808: 
-        index =	170;
-        break;
-    case   1320960808: 
-        index =	169;
-        break;
-    case   320960808: 
-        index =	168;
-        break;
-    case   1320520808: 
-        index =	167;
-        break;
-    case   320520808: 
-        index =	166;
-        break;
-    case   1320480808: 
-        index =	165;
-        break;
-    case   320480808: 
-        index =	164;
-        break;
-    case   1320360808: 
-        index =	163;
-        break;
-    case   320360808: 
-        index =	162;
-        break;
-    case   1320320808: 
-        index =	161;
-        break;
-    case   320320808: 
-        index =	160;
-        break;
-    case   1320920808: 
-        index =	159;
-        break;
-    case   320920808: 
-        index =	158;
-        break;
-    case   1320880808: 
-        index =	157;
-        break;
-    case   320880808: 
-        index =	156;
-        break;
-    case   1320760808: 
-        index =	155;
-        break;
-    case   320760808: 
-        index =	154;
-        break;
-    case   1320720808: 
-        index =	153;
-        break;
-    case   320720808: 
-        index =	152;
-        break;
-    case   1320280808: 
-        index =	151;
-        break;
-    case   320280808: 
-        index =	150;
-        break;
-    case   1320240808: 
-        index =	149;
-        break;
-    case   320240808: 
-        index =	148;
-        break;
-    case   1320120808: 
-        index =	147;
-        break;
-    case   320120808: 
-        index =	146;
-        break;
-    case   1320080808: 
-        index =	145;
-        break;
-    case   320080808: 
-        index =	144;
-        break;
-    case   1320840808: 
-        index =	143;
-        break;
-    case   320840808: 
-        index =	142;
-        break;
-    case   1320800808: 
-        index =	141;
-        break;
-    case   320800808: 
-        index =	140;
-        break;
-    case   1320680808: 
-        index =	139;
-        break;
-    case   320680808: 
-        index =	138;
-        break;
-    case   1320640808: 
-        index =	137;
-        break;
-    case   320640808: 
-        index =	136;
-        break;
-    case   1320200808: 
-        index =	135;
-        break;
-    case   320200808: 
-        index =	134;
-        break;
-    case   1320160808: 
-        index =	133;
-        break;
-    case   320160808: 
-        index =	132;
-        break;
-    case   1320040808: 
-        index =	131;
-        break;
-    case   320040808: 
-        index =	130;
-        break;
-    case   1320000808: 
-        index =	129;
-        break;
-    case   320000808: 
-        index =	128;
-        break;
-    case   1312520808: 
-        index =	127;
-        break;
-    case   1312480808: 
-        index =	126;
-        break;
-    case   1312360808: 
-        index =	125;
-        break;
-    case   1312320808: 
-        index =	124;
-        break;
-    case   1311880808: 
-        index =	123;
-        break;
-    case   1311840808: 
-        index =	122;
-        break;
-    case   1311720808: 
-        index =	121;
-        break;
-    case   1311680808: 
-        index =	120;
-        break;
-    case   1312440808: 
-        index =	111;
-        break;
-    case   312520808: 
-        index =	119;
-        break;
-    case   312480808: 
-        index =	118;
-        break;
-    case   312360808: 
-        index =	117;
-        break;
-    case   312320808: 
-        index =	116;
-        break;
-    case   311880808: 
-        index =	115;
-        break;
-    case   311840808: 
-        index =	114;
-        break;
-    case   311720808: 
-        index =	113;
-        break;
-    case   311680808: 
-        index =	112;
-        break;
-    case   1312400808: 
-        index =	110;
-        break;
-    case   1312280808: 
-        index =	109;
-        break;
-    case   1312240808: 
-        index =	108;
-        break;
-    case   1311800808: 
-        index =	107;
-        break;
-    case   1311760808: 
-        index =	106;
-        break;
-    case   1311640808: 
-        index =	105;
-        break;
-    case   1311600808: 
-        index =	104;
-        break;
-    case   312440808: 
-        index =	103;
-        break;
-    case   312400808: 
-        index =	102;
-        break;
-    case   312280808: 
-        index =	101;
-        break;
-    case   312240808: 
-        index =	100;
-        break;
-    case   311800808: 
-        index =	99;
-        break;
-    case   311760808: 
-        index =	98;
-        break;
-    case   311640808: 
-        index =	97;
-        break;
-    case   311600808: 
-        index =	96;
-        break;
-    case   1312200808: 
-        index =	95;
-        break;
-    case   1312160808: 
-        index =	94;
-        break;
-    case   1312040808: 
-        index =	93;
-        break;
-    case   1312000808: 
-        index =	92;
-        break;
-    case   1311560808: 
-        index =	91;
-        break;
-    case   1311520808: 
-        index =	90;
-        break;
-    case   1311400808: 
-        index =	89;
-        break;
-    case   1311360808: 
-        index =	88;
-        break;
-    case   312200808: 
-        index =	87;
-        break;
-    case   312160808: 
-        index =	86;
-        break;
-    case   312040808: 
-        index =	85;
-        break;
-    case   312000808: 
-        index =	84;
-        break;
-    case   311560808: 
-        index =	83;
-        break;
-    case   311520808: 
-        index =	82;
-        break;
-    case   311400808: 
-        index =	81;
-        break;
-    case   311360808: 
-        index =	80;
-        break;
-    case   1312120808: 
-        index =	79;
-        break;
-    case   1312080808: 
-        index =	78;
-        break;
-    case   1311960808: 
-        index =	77;
-        break;
-    case   1311920808: 
-        index =	76;
-        break;
-    case   1311480808: 
-        index =	75;
-        break;
-    case   1311440808: 
-        index =	74;
-        break;
-    case   1311320808: 
-        index =	73;
-        break;
-    case   1311280808: 
-        index =	72;
-        break;
-    case   312120808: 
-        index =	71;
-        break;
-    case   312080808: 
-        index =	70;
-        break;
-    case   311960808: 
-        index =	69;
-        break;
-    case   311920808: 
-        index =	68;
-        break;
-    case   311480808: 
-        index =	67;
-        break;
-    case   311440808: 
-        index =	66;
-        break;
-    case   311320808: 
-        index =	65;
-        break;
-    case   311280808: 
-        index =	64;
-        break;
-    case   1311240808: 
-        index =	63;
-        break;
-    case   1311200808: 
-        index =	62;
-        break;
-    case   1311080808: 
-        index =	61;
-        break;
-    case   1311040808: 
-        index =	60;
-        break;
-    case   1310600808: 
-        index =	59;
-        break;
-    case   1310560808: 
-        index =	58;
-        break;
-    case   1310440808: 
-        index =	57;
-        break;
-    case   1310400808: 
-        index =	56;
-        break;
-    case   311240808: 
-        index =	55;
-        break;
-    case   311200808: 
-        index =	54;
-        break;
-    case   311080808: 
-        index =	53;
-        break;
-    case   311040808: 
-        index =	52;
-        break;
-    case   310600808: 
-        index =	51;
-        break;
-    case   310560808: 
-        index =	50;
-        break;
-    case   310440808: 
-        index =	49;
-        break;
-    case   310400808: 
-        index =	48;
-        break;
-    case   1311160808: 
-        index =	47;
-        break;
-    case   1311120808: 
-        index =	46;
-        break;
-    case   1311000808: 
-        index =	45;
-        break;
-    case   1310960808: 
-        index =	44;
-        break;
-    case   1310520808: 
-        index =	43;
-        break;
-    case   1310480808: 
-        index =	42;
-        break;
-    case   1310360808: 
-        index =	41;
-        break;
-    case   1310320808: 
-        index =	40;
-        break;
-    case   311160808: 
-        index =	39;
-        break;
-    case   311120808: 
-        index =	38;
-        break;
-    case   311000808: 
-        index =	37;
-        break;
-    case   310960808: 
-        index =	36;
-        break;
-    case   310520808: 
-        index =	35;
-        break;
-    case   310480808: 
-        index =	34;
-        break;
-    case   310360808: 
-        index =	33;
-        break;
-    case   310320808: 
-        index =	32;
-        break;
-    case   1310920808: 
-        index =	31;
-        break;
-    case   1310880808: 
-        index =	30;
-        break;
-    case   1310760808: 
-        index =	29;
-        break;
-    case   1310720808: 
-        index =	28;
-        break;
-    case   1310280808: 
-        index =	27;
-        break;
-    case   1310240808: 
-        index =	26;
-        break;
-    case   1310120808: 
-        index =	25;
-        break;
-    case   1310080808: 
-        index =	24;
-        break;
-    case   310920808: 
-        index =	23;
-        break;
-    case   310880808: 
-        index =	22;
-        break;
-    case   310760808: 
-        index =	21;
-        break;
-    case   310720808: 
-        index =	20;
-        break;
-    case   310280808: 
-        index =	19;
-        break;
-    case   310240808: 
-        index =	18;
-        break;
-    case   310120808: 
-        index =	17;
-        break;
-    case   310080808: 
-        index =	16;
-        break;
-    case   1310840808: 
-        index =	15;
-        break;
-    case   1310800808: 
-        index =	14;
-        break;
-    case   1310680808: 
-        index =	13;
-        break;
-    case   1310640808: 
-        index =	12;
-        break;
-    case   1310200808: 
-        index =	11;
-        break;
-    case   1310160808: 
-        index =	10;
-        break;
-    case   1310040808: 
-        index =	9;
-        break;
-    case   1310000808: 
-        index =	8;
-        break;
-    case   310840808: 
-        index =	7;
-        break;
-    case   310800808: 
-        index =	6;
-        break;
-    case   310680808: 
-        index =	5;
-        break;
-    case   310640808: 
-        index =	4;
-        break;
-    case   310200808: 
-        index =	3;
-        break;
-    case   310160808: 
-        index =	2;
-        break;
-    case   310040808: 
-        index =	1;
-        break;
-    case   310000808: 
-        index =	0;
-        break;
-    default:
-        index = -1;
-
-    }
-
-#else   
-
-    switch(tmpIdx){
-    case  6464: 
-        index = 592;
-        break;
-    case  20006464: 
-        index = 590;
-        break;
-    case  1020006464: 
-        index = 591;
-        break;
-    case  10006464: 
-        index = 588;
-        break;
-    case  1010006464: 
-        index = 589;
-        break;
-    case  40006464: 
-        index = 576;
-        break;
-    case  1040006464: 
-        index = 579;
-        break;
-    case  50006464: 
-        index = 578;
-        break;
-    case  1050006464: 
-        index = 577;
-        break;
-    case  60006464: 
-        index = 580;
-        break;
-    case  1060006464: 
-        index = 583;
-        break;
-    case  70006464: 
-        index = 582;
-        break;
-    case  1070006464: 
-        index = 581;
-        break;
-    case  100003232: 
-        index = 584;
-        break;
-    case  120003232: 
-        index = 568;
-        break;
-    case  1120003232: 
-        index = 569;
-        break;
-    case  110003232: 
-        index = 560;
-        break;
-    case  1110003232: 
-        index = 562;
-        break;
-    case  140003232: 
-        index = 512;
-        break;
-    case  1140003232: 
-        index = 524;
-        break;
-    case  150003232: 
-        index = 520;
-        break;
-    case  1150003232: 
-        index = 516;
-        break;
-    case  160003232: 
-        index = 528;
-        break;
-    case  1160003232: 
-        index = 540;
-        break;
-    case  170003232: 
-        index = 536;
-        break;
-    case  1170003232: 
-        index = 532;
-        break;
-    case  200001616: 
-        index = 544;
-        break;
-    case  220001616: 
-        index = 480;
-        break;
-    case  1220001616: 
-        index = 481;
-        break;
-    case  210001616: 
-        index = 448;
-        break;
-    case  1210001616: 
-        index = 452;
-        break;
-    case  240001616: 
-        index = 256;
-        break;
-    case  1240001616: 
-        index = 304;
-        break;
-    case  250001616: 
-        index = 288;
-        break;
-    case  1250001616: 
-        index = 272;
-        break;
-    case  260001616: 
-        index = 320;
-        break;
-    case  1260001616: 
-        index = 368;
-        break;
-    case  270001616: 
-        index = 352;
-        break;
-    case  1270001616: 
-        index = 336;
-        break;
-    case  300000808: 
-        index = 384;
-        break;
-    case  320000808: 
-        index = 128;
-        break;
-    case  1320000808: 
-        index = 129;
-        break;
-    case  310000808: 
-        index = 0;
-        break;
-    case  1310000808: 
-        index = 8;
-        break;
-    case  300040808: 
-        index = 385;
-        break;
-    case  320040808: 
-        index = 130;
-        break;
-    case  1320040808: 
-        index = 131;
-        break;
-    case  310040808: 
-        index = 1;
-        break;
-    case  1310040808: 
-        index = 9;
-        break;
-    case  300080808: 
-        index = 392;
-        break;
-    case  320080808: 
-        index = 144;
-        break;
-    case  1320080808: 
-        index = 145;
-        break;
-    case  310080808: 
-        index = 16;
-        break;
-    case  1310080808: 
-        index = 24;
-        break;
-    case  300120808: 
-        index = 393;
-        break;
-    case  320120808: 
-        index = 146;
-        break;
-    case  1320120808: 
-        index = 147;
-        break;
-    case  310120808: 
-        index = 17;
-        break;
-    case  1310120808: 
-        index = 25;
-        break;
-    case  200161616: 
-        index = 545;
-        break;
-    case  220161616: 
-        index = 482;
-        break;
-    case  1220161616: 
-        index = 483;
-        break;
-    case  210161616: 
-        index = 449;
-        break;
-    case  1210161616: 
-        index = 453;
-        break;
-    case  240161616: 
-        index = 257;
-        break;
-    case  1240161616: 
-        index = 305;
-        break;
-    case  250161616: 
-        index = 289;
-        break;
-    case  1250161616: 
-        index = 273;
-        break;
-    case  260161616: 
-        index = 321;
-        break;
-    case  1260161616: 
-        index = 369;
-        break;
-    case  270161616: 
-        index = 353;
-        break;
-    case  1270161616: 
-        index = 337;
-        break;
-    case  300160808: 
-        index = 386;
-        break;
-    case  320160808: 
-        index = 132;
-        break;
-    case  1320160808: 
-        index = 133;
-        break;
-    case  310160808: 
-        index = 2;
-        break;
-    case  1310160808: 
-        index = 10;
-        break;
-    case  300200808: 
-        index = 387;
-        break;
-    case  320200808: 
-        index = 134;
-        break;
-    case  1320200808: 
-        index = 135;
-        break;
-    case  310200808: 
-        index = 3;
-        break;
-    case  1310200808: 
-        index = 11;
-        break;
-    case  300240808: 
-        index = 394;
-        break;
-    case  320240808: 
-        index = 148;
-        break;
-    case  1320240808: 
-        index = 149;
-        break;
-    case  310240808: 
-        index = 18;
-        break;
-    case  1310240808: 
-        index = 26;
-        break;
-    case  300280808: 
-        index = 395;
-        break;
-    case  320280808: 
-        index = 150;
-        break;
-    case  1320280808: 
-        index = 151;
-        break;
-    case  310280808: 
-        index = 19;
-        break;
-    case  1310280808: 
-        index = 27;
-        break;
-    case  200321616: 
-        index = 548;
-        break;
-    case  220321616: 
-        index = 488;
-        break;
-    case  1220321616: 
-        index = 489;
-        break;
-    case  210321616: 
-        index = 456;
-        break;
-    case  1210321616: 
-        index = 460;
-        break;
-    case  240321616: 
-        index = 260;
-        break;
-    case  1240321616: 
-        index = 308;
-        break;
-    case  250321616: 
-        index = 292;
-        break;
-    case  1250321616: 
-        index = 276;
-        break;
-    case  260321616: 
-        index = 324;
-        break;
-    case  1260321616: 
-        index = 372;
-        break;
-    case  270321616: 
-        index = 356;
-        break;
-    case  1270321616: 
-        index = 340;
-        break;
-    case  300320808: 
-        index = 400;
-        break;
-    case  320320808: 
-        index = 160;
-        break;
-    case  1320320808: 
-        index = 161;
-        break;
-    case  310320808: 
-        index = 32;
-        break;
-    case  1310320808: 
-        index = 40;
-        break;
-    case  300360808: 
-        index = 401;
-        break;
-    case  320360808: 
-        index = 162;
-        break;
-    case  1320360808: 
-        index = 163;
-        break;
-    case  310360808: 
-        index = 33;
-        break;
-    case  1310360808: 
-        index = 41;
-        break;
-    case  300400808: 
-        index = 408;
-        break;
-    case  320400808: 
-        index = 176;
-        break;
-    case  1320400808: 
-        index = 177;
-        break;
-    case  310400808: 
-        index = 48;
-        break;
-    case  1310400808: 
-        index = 56;
-        break;
-    case  300440808: 
-        index = 409;
-        break;
-    case  320440808: 
-        index = 178;
-        break;
-    case  1320440808: 
-        index = 179;
-        break;
-    case  310440808: 
-        index = 49;
-        break;
-    case  1310440808: 
-        index = 57;
-        break;
-    case  200481616: 
-        index = 549;
-        break;
-    case  220481616: 
-        index = 490;
-        break;
-    case  1220481616: 
-        index = 491;
-        break;
-    case  210481616: 
-        index = 457;
-        break;
-    case  1210481616: 
-        index = 461;
-        break;
-    case  240481616: 
-        index = 261;
-        break;
-    case  1240481616: 
-        index = 309;
-        break;
-    case  250481616: 
-        index = 293;
-        break;
-    case  1250481616: 
-        index = 277;
-        break;
-    case  260481616: 
-        index = 325;
-        break;
-    case  1260481616: 
-        index = 373;
-        break;
-    case  270481616: 
-        index = 357;
-        break;
-    case  1270481616: 
-        index = 341;
-        break;
-    case  300480808: 
-        index = 402;
-        break;
-    case  320480808: 
-        index = 164;
-        break;
-    case  1320480808: 
-        index = 165;
-        break;
-    case  310480808: 
-        index = 34;
-        break;
-    case  1310480808: 
-        index = 42;
-        break;
-    case  300520808: 
-        index = 403;
-        break;
-    case  320520808: 
-        index = 166;
-        break;
-    case  1320520808: 
-        index = 167;
-        break;
-    case  310520808: 
-        index = 35;
-        break;
-    case  1310520808: 
-        index = 43;
-        break;
-    case  300560808: 
-        index = 410;
-        break;
-    case  320560808: 
-        index = 180;
-        break;
-    case  1320560808: 
-        index = 181;
-        break;
-    case  310560808: 
-        index = 50;
-        break;
-    case  1310560808: 
-        index = 58;
-        break;
-    case  300600808: 
-        index = 411;
-        break;
-    case  320600808: 
-        index = 182;
-        break;
-    case  1320600808: 
-        index = 183;
-        break;
-    case  310600808: 
-        index = 51;
-        break;
-    case  1310600808: 
-        index = 59;
-        break;
-    case  100643232: 
-        index = 585;
-        break;
-    case  120643232: 
-        index = 570;
-        break;
-    case  1120643232: 
-        index = 571;
-        break;
-    case  110643232: 
-        index = 561;
-        break;
-    case  1110643232: 
-        index = 563;
-        break;
-    case  140643232: 
-        index = 513;
-        break;
-    case  1140643232: 
-        index = 525;
-        break;
-    case  150643232: 
-        index = 521;
-        break;
-    case  1150643232: 
-        index = 517;
-        break;
-    case  160643232: 
-        index = 529;
-        break;
-    case  1160643232: 
-        index = 541;
-        break;
-    case  170643232: 
-        index = 537;
-        break;
-    case  1170643232: 
-        index = 533;
-        break;
-    case  200641616: 
-        index = 546;
-        break;
-    case  220641616: 
-        index = 484;
-        break;
-    case  1220641616: 
-        index = 485;
-        break;
-    case  210641616: 
-        index = 450;
-        break;
-    case  1210641616: 
-        index = 454;
-        break;
-    case  240641616: 
-        index = 258;
-        break;
-    case  1240641616: 
-        index = 306;
-        break;
-    case  250641616: 
-        index = 290;
-        break;
-    case  1250641616: 
-        index = 274;
-        break;
-    case  260641616: 
-        index = 322;
-        break;
-    case  1260641616: 
-        index = 370;
-        break;
-    case  270641616: 
-        index = 354;
-        break;
-    case  1270641616: 
-        index = 338;
-        break;
-    case  300640808: 
-        index = 388;
-        break;
-    case  320640808: 
-        index = 136;
-        break;
-    case  1320640808: 
-        index = 137;
-        break;
-    case  310640808: 
-        index = 4;
-        break;
-    case  1310640808: 
-        index = 12;
-        break;
-    case  300680808: 
-        index = 389;
-        break;
-    case  320680808: 
-        index = 138;
-        break;
-    case  1320680808: 
-        index = 139;
-        break;
-    case  310680808: 
-        index = 5;
-        break;
-    case  1310680808: 
-        index = 13;
-        break;
-    case  300720808: 
-        index = 396;
-        break;
-    case  320720808: 
-        index = 152;
-        break;
-    case  1320720808: 
-        index = 153;
-        break;
-    case  310720808: 
-        index = 20;
-        break;
-    case  1310720808: 
-        index = 28;
-        break;
-    case  300760808: 
-        index = 397;
-        break;
-    case  320760808: 
-        index = 154;
-        break;
-    case  1320760808: 
-        index = 155;
-        break;
-    case  310760808: 
-        index = 21;
-        break;
-    case  1310760808: 
-        index = 29;
-        break;
-    case  200801616: 
-        index = 547;
-        break;
-    case  220801616: 
-        index = 486;
-        break;
-    case  1220801616: 
-        index = 487;
-        break;
-    case  210801616: 
-        index = 451;
-        break;
-    case  1210801616: 
-        index = 455;
-        break;
-    case  240801616: 
-        index = 259;
-        break;
-    case  1240801616: 
-        index = 307;
-        break;
-    case  250801616: 
-        index = 291;
-        break;
-    case  1250801616: 
-        index = 275;
-        break;
-    case  260801616: 
-        index = 323;
-        break;
-    case  1260801616: 
-        index = 371;
-        break;
-    case  270801616: 
-        index = 355;
-        break;
-    case  1270801616: 
-        index = 339;
-        break;
-    case  300800808: 
-        index = 390;
-        break;
-    case  320800808: 
-        index = 140;
-        break;
-    case  1320800808: 
-        index = 141;
-        break;
-    case  310800808: 
-        index = 6;
-        break;
-    case  1310800808: 
-        index = 14;
-        break;
-    case  300840808: 
-        index = 391;
-        break;
-    case  320840808: 
-        index = 142;
-        break;
-    case  1320840808: 
-        index = 143;
-        break;
-    case  310840808: 
-        index = 7;
-        break;
-    case  1310840808: 
-        index = 15;
-        break;
-    case  300880808: 
-        index = 398;
-        break;
-    case  320880808: 
-        index = 156;
-        break;
-    case  1320880808: 
-        index = 157;
-        break;
-    case  310880808: 
-        index = 22;
-        break;
-    case  1310880808: 
-        index = 30;
-        break;
-    case  300920808: 
-        index = 399;
-        break;
-    case  320920808: 
-        index = 158;
-        break;
-    case  1320920808: 
-        index = 159;
-        break;
-    case  310920808: 
-        index = 23;
-        break;
-    case  1310920808: 
-        index = 31;
-        break;
-    case  200961616: 
-        index = 550;
-        break;
-    case  220961616: 
-        index = 492;
-        break;
-    case  1220961616: 
-        index = 493;
-        break;
-    case  210961616: 
-        index = 458;
-        break;
-    case  1210961616: 
-        index = 462;
-        break;
-    case  240961616: 
-        index = 262;
-        break;
-    case  1240961616: 
-        index = 310;
-        break;
-    case  250961616: 
-        index = 294;
-        break;
-    case  1250961616: 
-        index = 278;
-        break;
-    case  260961616: 
-        index = 326;
-        break;
-    case  1260961616: 
-        index = 374;
-        break;
-    case  270961616: 
-        index = 358;
-        break;
-    case  1270961616: 
-        index = 342;
-        break;
-    case  300960808: 
-        index = 404;
-        break;
-    case  320960808: 
-        index = 168;
-        break;
-    case  1320960808: 
-        index = 169;
-        break;
-    case  310960808: 
-        index = 36;
-        break;
-    case  1310960808: 
-        index = 44;
-        break;
-    case  301000808: 
-        index = 405;
-        break;
-    case  321000808: 
-        index = 170;
-        break;
-    case  1321000808: 
-        index = 171;
-        break;
-    case  311000808: 
-        index = 37;
-        break;
-    case  1311000808: 
-        index = 45;
-        break;
-    case  301040808: 
-        index = 412;
-        break;
-    case  321040808: 
-        index = 184;
-        break;
-    case  1321040808: 
-        index = 185;
-        break;
-    case  311040808: 
-        index = 52;
-        break;
-    case  1311040808: 
-        index = 60;
-        break;
-    case  301080808: 
-        index = 413;
-        break;
-    case  321080808: 
-        index = 186;
-        break;
-    case  1321080808: 
-        index = 187;
-        break;
-    case  311080808: 
-        index = 53;
-        break;
-    case  1311080808: 
-        index = 61;
-        break;
-    case  201121616: 
-        index = 551;
-        break;
-    case  221121616: 
-        index = 494;
-        break;
-    case  1221121616: 
-        index = 495;
-        break;
-    case  211121616: 
-        index = 459;
-        break;
-    case  1211121616: 
-        index = 463;
-        break;
-    case  241121616: 
-        index = 263;
-        break;
-    case  1241121616: 
-        index = 311;
-        break;
-    case  251121616: 
-        index = 295;
-        break;
-    case  1251121616: 
-        index = 279;
-        break;
-    case  261121616: 
-        index = 327;
-        break;
-    case  1261121616: 
-        index = 375;
-        break;
-    case  271121616: 
-        index = 359;
-        break;
-    case  1271121616: 
-        index = 343;
-        break;
-    case  301120808: 
-        index = 406;
-        break;
-    case  321120808: 
-        index = 172;
-        break;
-    case  1321120808: 
-        index = 173;
-        break;
-    case  311120808: 
-        index = 38;
-        break;
-    case  1311120808: 
-        index = 46;
-        break;
-    case  301160808: 
-        index = 407;
-        break;
-    case  321160808: 
-        index = 174;
-        break;
-    case  1321160808: 
-        index = 175;
-        break;
-    case  311160808: 
-        index = 39;
-        break;
-    case  1311160808: 
-        index = 47;
-        break;
-    case  301200808: 
-        index = 414;
-        break;
-    case  321200808: 
-        index = 188;
-        break;
-    case  1321200808: 
-        index = 189;
-        break;
-    case  311200808: 
-        index = 54;
-        break;
-    case  1311200808: 
-        index = 62;
-        break;
-    case  301240808: 
-        index = 415;
-        break;
-    case  321240808: 
-        index = 190;
-        break;
-    case  1321240808: 
-        index = 191;
-        break;
-    case  311240808: 
-        index = 55;
-        break;
-    case  1311240808: 
-        index = 63;
-        break;
-    case  101283232: 
-        index = 586;
-        break;
-    case  121283232: 
-        index = 572;
-        break;
-    case  1121283232: 
-        index = 573;
-        break;
-    case  111283232: 
-        index = 564;
-        break;
-    case  1111283232: 
-        index = 566;
-        break;
-    case  141283232: 
-        index = 514;
-        break;
-    case  1141283232: 
-        index = 526;
-        break;
-    case  151283232: 
-        index = 522;
-        break;
-    case  1151283232: 
-        index = 518;
-        break;
-    case  161283232: 
-        index = 530;
-        break;
-    case  1161283232: 
-        index = 542;
-        break;
-    case  171283232: 
-        index = 538;
-        break;
-    case  1171283232: 
-        index = 534;
-        break;
-    case  201281616: 
-        index = 552;
-        break;
-    case  221281616: 
-        index = 496;
-        break;
-    case  1221281616: 
-        index = 497;
-        break;
-    case  211281616: 
-        index = 464;
-        break;
-    case  1211281616: 
-        index = 468;
-        break;
-    case  241281616: 
-        index = 264;
-        break;
-    case  1241281616: 
-        index = 312;
-        break;
-    case  251281616: 
-        index = 296;
-        break;
-    case  1251281616: 
-        index = 280;
-        break;
-    case  261281616: 
-        index = 328;
-        break;
-    case  1261281616: 
-        index = 376;
-        break;
-    case  271281616: 
-        index = 360;
-        break;
-    case  1271281616: 
-        index = 344;
-        break;
-    case  301280808: 
-        index = 416;
-        break;
-    case  321280808: 
-        index = 192;
-        break;
-    case  1321280808: 
-        index = 193;
-        break;
-    case  311280808: 
-        index = 64;
-        break;
-    case  1311280808: 
-        index = 72;
-        break;
-    case  301320808: 
-        index = 417;
-        break;
-    case  321320808: 
-        index = 194;
-        break;
-    case  1321320808: 
-        index = 195;
-        break;
-    case  311320808: 
-        index = 65;
-        break;
-    case  1311320808: 
-        index = 73;
-        break;
-    case  301360808: 
-        index = 424;
-        break;
-    case  321360808: 
-        index = 208;
-        break;
-    case  1321360808: 
-        index = 209;
-        break;
-    case  311360808: 
-        index = 80;
-        break;
-    case  1311360808: 
-        index = 88;
-        break;
-    case  301400808: 
-        index = 425;
-        break;
-    case  321400808: 
-        index = 210;
-        break;
-    case  1321400808: 
-        index = 211;
-        break;
-    case  311400808: 
-        index = 81;
-        break;
-    case  1311400808: 
-        index = 89;
-        break;
-    case  201441616: 
-        index = 553;
-        break;
-    case  221441616: 
-        index = 498;
-        break;
-    case  1221441616: 
-        index = 499;
-        break;
-    case  211441616: 
-        index = 465;
-        break;
-    case  1211441616: 
-        index = 469;
-        break;
-    case  241441616: 
-        index = 265;
-        break;
-    case  1241441616: 
-        index = 313;
-        break;
-    case  251441616: 
-        index = 297;
-        break;
-    case  1251441616: 
-        index = 281;
-        break;
-    case  261441616: 
-        index = 329;
-        break;
-    case  1261441616: 
-        index = 377;
-        break;
-    case  271441616: 
-        index = 361;
-        break;
-    case  1271441616: 
-        index = 345;
-        break;
-    case  301440808: 
-        index = 418;
-        break;
-    case  321440808: 
-        index = 196;
-        break;
-    case  1321440808: 
-        index = 197;
-        break;
-    case  311440808: 
-        index = 66;
-        break;
-    case  1311440808: 
-        index = 74;
-        break;
-    case  301480808: 
-        index = 419;
-        break;
-    case  321480808: 
-        index = 198;
-        break;
-    case  1321480808: 
-        index = 199;
-        break;
-    case  311480808: 
-        index = 67;
-        break;
-    case  1311480808: 
-        index = 75;
-        break;
-    case  301520808: 
-        index = 426;
-        break;
-    case  321520808: 
-        index = 212;
-        break;
-    case  1321520808: 
-        index = 213;
-        break;
-    case  311520808: 
-        index = 82;
-        break;
-    case  1311520808: 
-        index = 90;
-        break;
-    case  301560808: 
-        index = 427;
-        break;
-    case  321560808: 
-        index = 214;
-        break;
-    case  1321560808: 
-        index = 215;
-        break;
-    case  311560808: 
-        index = 83;
-        break;
-    case  1311560808: 
-        index = 91;
-        break;
-    case  201601616: 
-        index = 556;
-        break;
-    case  221601616: 
-        index = 504;
-        break;
-    case  1221601616: 
-        index = 505;
-        break;
-    case  211601616: 
-        index = 472;
-        break;
-    case  1211601616: 
-        index = 476;
-        break;
-    case  241601616: 
-        index = 268;
-        break;
-    case  1241601616: 
-        index = 316;
-        break;
-    case  251601616: 
-        index = 300;
-        break;
-    case  1251601616: 
-        index = 284;
-        break;
-    case  261601616: 
-        index = 332;
-        break;
-    case  1261601616: 
-        index = 380;
-        break;
-    case  271601616: 
-        index = 364;
-        break;
-    case  1271601616: 
-        index = 348;
-        break;
-    case  301600808: 
-        index = 432;
-        break;
-    case  321600808: 
-        index = 224;
-        break;
-    case  1321600808: 
-        index = 225;
-        break;
-    case  311600808: 
-        index = 96;
-        break;
-    case  1311600808: 
-        index = 104;
-        break;
-    case  301640808: 
-        index = 433;
-        break;
-    case  321640808: 
-        index = 226;
-        break;
-    case  1321640808: 
-        index = 227;
-        break;
-    case  311640808: 
-        index = 97;
-        break;
-    case  1311640808: 
-        index = 105;
-        break;
-    case  301680808: 
-        index = 440;
-        break;
-    case  321680808: 
-        index = 240;
-        break;
-    case  1321680808: 
-        index = 241;
-        break;
-    case  311680808: 
-        index = 112;
-        break;
-    case  1311680808: 
-        index = 120;
-        break;
-    case  301720808: 
-        index = 441;
-        break;
-    case  321720808: 
-        index = 242;
-        break;
-    case  1321720808: 
-        index = 243;
-        break;
-    case  311720808: 
-        index = 113;
-        break;
-    case  1311720808: 
-        index = 121;
-        break;
-    case  201761616: 
-        index = 557;
-        break;
-    case  221761616: 
-        index = 506;
-        break;
-    case  1221761616: 
-        index = 507;
-        break;
-    case  211761616: 
-        index = 473;
-        break;
-    case  1211761616: 
-        index = 477;
-        break;
-    case  241761616: 
-        index = 269;
-        break;
-    case  1241761616: 
-        index = 317;
-        break;
-    case  251761616: 
-        index = 301;
-        break;
-    case  1251761616: 
-        index = 285;
-        break;
-    case  261761616: 
-        index = 333;
-        break;
-    case  1261761616: 
-        index = 381;
-        break;
-    case  271761616: 
-        index = 365;
-        break;
-    case  1271761616: 
-        index = 349;
-        break;
-    case  301760808: 
-        index = 434;
-        break;
-    case  321760808: 
-        index = 228;
-        break;
-    case  1321760808: 
-        index = 229;
-        break;
-    case  311760808: 
-        index = 98;
-        break;
-    case  1311760808: 
-        index = 106;
-        break;
-    case  301800808: 
-        index = 435;
-        break;
-    case  321800808: 
-        index = 230;
-        break;
-    case  1321800808: 
-        index = 231;
-        break;
-    case  311800808: 
-        index = 99;
-        break;
-    case  1311800808: 
-        index = 107;
-        break;
-    case  301840808: 
-        index = 442;
-        break;
-    case  321840808: 
-        index = 244;
-        break;
-    case  1321840808: 
-        index = 245;
-        break;
-    case  311840808: 
-        index = 114;
-        break;
-    case  1311840808: 
-        index = 122;
-        break;
-    case  301880808: 
-        index = 443;
-        break;
-    case  321880808: 
-        index = 246;
-        break;
-    case  1321880808: 
-        index = 247;
-        break;
-    case  311880808: 
-        index = 115;
-        break;
-    case  1311880808: 
-        index = 123;
-        break;
-    case  101923232: 
-        index = 587;
-        break;
-    case  121923232: 
-        index = 574;
-        break;
-    case  1121923232: 
-        index = 575;
-        break;
-    case  111923232: 
-        index = 565;
-        break;
-    case  1111923232: 
-        index = 567;
-        break;
-    case  141923232: 
-        index = 515;
-        break;
-    case  1141923232: 
-        index = 527;
-        break;
-    case  151923232: 
-        index = 523;
-        break;
-    case  1151923232: 
-        index = 519;
-        break;
-    case  161923232: 
-        index = 531;
-        break;
-    case  1161923232: 
-        index = 543;
-        break;
-    case  171923232: 
-        index = 539;
-        break;
-    case  1171923232: 
-        index = 535;
-        break;
-    case  201921616: 
-        index = 554;
-        break;
-    case  221921616: 
-        index = 500;
-        break;
-    case  1221921616: 
-        index = 501;
-        break;
-    case  211921616: 
-        index = 466;
-        break;
-    case  1211921616: 
-        index = 470;
-        break;
-    case  241921616: 
-        index = 266;
-        break;
-    case  1241921616: 
-        index = 314;
-        break;
-    case  251921616: 
-        index = 298;
-        break;
-    case  1251921616: 
-        index = 282;
-        break;
-    case  261921616: 
-        index = 330;
-        break;
-    case  1261921616: 
-        index = 378;
-        break;
-    case  271921616: 
-        index = 362;
-        break;
-    case  1271921616: 
-        index = 346;
-        break;
-    case  301920808: 
-        index = 420;
-        break;
-    case  321920808: 
-        index = 200;
-        break;
-    case  1321920808: 
-        index = 201;
-        break;
-    case  311920808: 
-        index = 68;
-        break;
-    case  1311920808: 
-        index = 76;
-        break;
-    case  301960808: 
-        index = 421;
-        break;
-    case  321960808: 
-        index = 202;
-        break;
-    case  1321960808: 
-        index = 203;
-        break;
-    case  311960808: 
-        index = 69;
-        break;
-    case  1311960808: 
-        index = 77;
-        break;
-    case  302000808: 
-        index = 428;
-        break;
-    case  322000808: 
-        index = 216;
-        break;
-    case  1322000808: 
-        index = 217;
-        break;
-    case  312000808: 
-        index = 84;
-        break;
-    case  1312000808: 
-        index = 92;
-        break;
-    case  302040808: 
-        index = 429;
-        break;
-    case  322040808: 
-        index = 218;
-        break;
-    case  1322040808: 
-        index = 219;
-        break;
-    case  312040808: 
-        index = 85;
-        break;
-    case  1312040808: 
-        index = 93;
-        break;
-    case  202081616: 
-        index = 555;
-        break;
-    case  222081616: 
-        index = 502;
-        break;
-    case  1222081616: 
-        index = 503;
-        break;
-    case  212081616: 
-        index = 467;
-        break;
-    case  1212081616: 
-        index = 471;
-        break;
-    case  242081616: 
-        index = 267;
-        break;
-    case  1242081616: 
-        index = 315;
-        break;
-    case  252081616: 
-        index = 299;
-        break;
-    case  1252081616: 
-        index = 283;
-        break;
-    case  262081616: 
-        index = 331;
-        break;
-    case  1262081616: 
-        index = 379;
-        break;
-    case  272081616: 
-        index = 363;
-        break;
-    case  1272081616: 
-        index = 347;
-        break;
-    case  302080808: 
-        index = 422;
-        break;
-    case  322080808: 
-        index = 204;
-        break;
-    case  1322080808: 
-        index = 205;
-        break;
-    case  312080808: 
-        index = 70;
-        break;
-    case  1312080808: 
-        index = 78;
-        break;
-    case  302120808: 
-        index = 423;
-        break;
-    case  322120808: 
-        index = 206;
-        break;
-    case  1322120808: 
-        index = 207;
-        break;
-    case  312120808: 
-        index = 71;
-        break;
-    case  1312120808: 
-        index = 79;
-        break;
-    case  302160808: 
-        index = 430;
-        break;
-    case  322160808: 
-        index = 220;
-        break;
-    case  1322160808: 
-        index = 221;
-        break;
-    case  312160808: 
-        index = 86;
-        break;
-    case  1312160808: 
-        index = 94;
-        break;
-    case  302200808: 
-        index = 431;
-        break;
-    case  322200808: 
-        index = 222;
-        break;
-    case  1322200808: 
-        index = 223;
-        break;
-    case  312200808: 
-        index = 87;
-        break;
-    case  1312200808: 
-        index = 95;
-        break;
-    case  202241616: 
-        index = 558;
-        break;
-    case  222241616: 
-        index = 508;
-        break;
-    case  1222241616: 
-        index = 509;
-        break;
-    case  212241616: 
-        index = 474;
-        break;
-    case  1212241616: 
-        index = 478;
-        break;
-    case  242241616: 
-        index = 270;
-        break;
-    case  1242241616: 
-        index = 318;
-        break;
-    case  252241616: 
-        index = 302;
-        break;
-    case  1252241616: 
-        index = 286;
-        break;
-    case  262241616: 
-        index = 334;
-        break;
-    case  1262241616: 
-        index = 382;
-        break;
-    case  272241616: 
-        index = 366;
-        break;
-    case  1272241616: 
-        index = 350;
-        break;
-    case  302240808: 
-        index = 436;
-        break;
-    case  322240808: 
-        index = 232;
-        break;
-    case  1322240808: 
-        index = 233;
-        break;
-    case  312240808: 
-        index = 100;
-        break;
-    case  1312240808: 
-        index = 108;
-        break;
-    case  302280808: 
-        index = 437;
-        break;
-    case  322280808: 
-        index = 234;
-        break;
-    case  1322280808: 
-        index = 235;
-        break;
-    case  312280808: 
-        index = 101;
-        break;
-    case  1312280808: 
-        index = 109;
-        break;
-    case  302320808: 
-        index = 444;
-        break;
-    case  322320808: 
-        index = 248;
-        break;
-    case  1322320808: 
-        index = 249;
-        break;
-    case  312320808: 
-        index = 116;
-        break;
-    case  1312320808: 
-        index = 124;
-        break;
-    case  302360808: 
-        index = 445;
-        break;
-    case  322360808: 
-        index = 250;
-        break;
-    case  1322360808: 
-        index = 251;
-        break;
-    case  312360808: 
-        index = 117;
-        break;
-    case  1312360808: 
-        index = 125;
-        break;
-    case  202401616: 
-        index = 559;
-        break;
-    case  222401616: 
-        index = 510;
-        break;
-    case  1222401616: 
-        index = 511;
-        break;
-    case  212401616: 
-        index = 475;
-        break;
-    case  1212401616: 
-        index = 479;
-        break;
-    case  242401616: 
-        index = 271;
-        break;
-    case  1242401616: 
-        index = 319;
-        break;
-    case  252401616: 
-        index = 303;
-        break;
-    case  1252401616: 
-        index = 287;
-        break;
-    case  262401616: 
-        index = 335;
-        break;
-    case  1262401616: 
-        index = 383;
-        break;
-    case  272401616: 
-        index = 367;
-        break;
-    case  1272401616: 
-        index = 351;
-        break;
-    case  302400808: 
-        index = 438;
-        break;
-    case  322400808: 
-        index = 236;
-        break;
-    case  1322400808: 
-        index = 237;
-        break;
-    case  312400808: 
-        index = 102;
-        break;
-    case  1312400808: 
-        index = 110;
-        break;
-    case  302440808: 
-        index = 439;
-        break;
-    case  322440808: 
-        index = 238;
-        break;
-    case  1322440808: 
-        index = 239;
-        break;
-    case  312440808: 
-        index = 103;
-        break;
-    case  1312440808: 
-        index = 111;
-        break;
-    case  302480808: 
-        index = 446;
-        break;
-    case  322480808: 
-        index = 252;
-        break;
-    case  1322480808: 
-        index = 253;
-        break;
-    case  312480808: 
-        index = 118;
-        break;
-    case  1312480808: 
-        index = 126;
-        break;
-    case  302520808: 
-        index = 447;
-        break;
-    case  322520808: 
-        index = 254;
-        break;
-    case  1322520808: 
-        index = 255;
-        break;
-    case  312520808: 
-        index = 119;
-        break;
-    case  1312520808: 
-        index = 127;
-        break;
-    default:
-      index = -1;
-        }
-#endif
-
-  return index;
 }
 
 //! \}

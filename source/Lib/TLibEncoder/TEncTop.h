@@ -57,7 +57,6 @@
 #include "TEncSampleAdaptiveOffset.h"
 #include "TEncPreanalyzer.h"
 #include "TEncRateCtrl.h"
-#include "TEncOpenCL.h"
 //! \ingroup TLibEncoder
 //! \{
 
@@ -77,11 +76,6 @@ private:
 
   // encoder search
   TEncSearch              m_cSearch;                      ///< encoder search class
-
-  // OpenCL Motion Estimation
-  TEncOpenCL              m_cOpenCLME;                      ///< OpenCL Motion Estimation class
-
-  
   //TEncEntropy*            m_pcEntropyCoder;                     ///< entropy encoder
   TEncCavlc*              m_pcCavlcCoder;                       ///< CAVLC encoder
   // coding tool
@@ -122,11 +116,11 @@ protected:
   Void  xInitVPS          ();                             ///< initialize VPS from encoder options
   Void  xInitSPS          ();                             ///< initialize SPS from encoder options
   Void  xInitPPS          ();                             ///< initialize PPS from encoder options
-  Void  xInitScalingLists();                              ///< initialize scaling lists
+  Void  xInitScalingLists ();                             ///< initialize scaling lists
+  Void  xInitHrdParameters();                             ///< initialize HRD parameters
 
   Void  xInitPPSforTiles  ();
   Void  xInitRPS          (Bool isFieldCoding);           ///< initialize PPS from encoder options
-  Void  xInitOpenCL       (Int OpenCLDevice);             ///< initialize OpenCL 
 
 public:
   TEncTop();
@@ -143,8 +137,6 @@ public:
 
   TComList<TComPic*>*     getListPic            () { return  &m_cListPic;             }
   TEncSearch*             getPredSearch         () { return  &m_cSearch;              }
-  TEncOpenCL*             getOpenCLME           () { return  &m_cOpenCLME;            }
-
 
   TComTrQuant*            getTrQuant            () { return  &m_cTrQuant;             }
   TComLoopFilter*         getLoopFilter         () { return  &m_cLoopFilter;          }
@@ -162,7 +154,7 @@ public:
   TEncSbac*               getRDGoOnSbacCoder    () { return  &m_cRDGoOnSbacCoder;     }
   TEncRateCtrl*           getRateCtrl           () { return &m_cRateCtrl;             }
   Void selectReferencePictureSet(TComSlice* slice, Int POCCurr, Int GOPid );
-  Int getReferencePictureSetIdxForSOP(TComSlice* slice, Int POCCurr, Int GOPid );
+  Int getReferencePictureSetIdxForSOP(Int POCCurr, Int GOPid );
   // -------------------------------------------------------------------------------------------------------------------
   // encoder function
   // -------------------------------------------------------------------------------------------------------------------

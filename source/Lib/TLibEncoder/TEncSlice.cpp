@@ -122,7 +122,6 @@ Void TEncSlice::init( TEncTop* pcEncTop )
   m_pcGOPEncoder      = pcEncTop->getGOPEncoder();
   m_pcCuEncoder       = pcEncTop->getCuEncoder();
   m_pcPredSearch      = pcEncTop->getPredSearch();
-  m_pcOpenCLME        = pcEncTop->getOpenCLME();
 
   m_pcEntropyCoder    = pcEncTop->getEntropyCoder();
   m_pcSbacCoder       = pcEncTop->getSbacCoder();
@@ -147,8 +146,6 @@ TEncSlice::setUpLambda(TComSlice* slice, const Double dLambda, Int iQP)
 {
   // store lambda
   m_pcRdCost ->setLambda( dLambda, slice->getSPS()->getBitDepths() );
-  m_pcOpenCLME->setLambda( dLambda);
-  
 
   // for RDO
   // in RdCost there is only one lambda because the luma and chroma bits are not separated, instead we weight the distortion of chroma.
@@ -171,7 +168,7 @@ TEncSlice::setUpLambda(TComSlice* slice, const Double dLambda, Int iQP)
 #endif
 
 // For SAO
-  slice   ->setLambdas( dLambdas );
+  slice->setLambdas( dLambdas );
 }
 
 
@@ -191,7 +188,7 @@ TEncSlice::setUpLambda(TComSlice* slice, const Double dLambda, Int iQP)
  \param isField       true for field coding
  */
 
-Void TEncSlice::initEncSlice( TComPic* pcPic, Int pocLast, Int pocCurr, Int iNumPicRcvd, Int iGOPid, TComSlice*& rpcSlice, Bool isField )
+Void TEncSlice::initEncSlice( TComPic* pcPic, const Int pocLast, const Int pocCurr, const Int iGOPid, TComSlice*& rpcSlice, const Bool isField )
 {
   Double dQP;
   Double dLambda;
@@ -239,42 +236,30 @@ Void TEncSlice::initEncSlice( TComPic* pcPic, Int pocLast, Int pocCurr, Int iNum
       }
     }
 
-#if HARMONIZE_GOP_FIRST_FIELD_COUPLE
-    if(poc != 0)
+    if(m_pcCfg->getHarmonizeGopFirstFieldCoupleEnabled() && poc != 0)
     {
-#endif
       if (isField && ((rpcSlice->getPOC() % 2) == 1))
       {
         depth ++;
       }
-#if HARMONIZE_GOP_FIRST_FIELD_COUPLE
     }
-#endif
   }
 
   // slice type
   SliceType eSliceType;
 
   eSliceType=B_SLICE;
-#if EFFICIENT_FIELD_IRAP
-  if(!(isField && pocLast == 1))
+  if(!(isField && pocLast == 1) || !m_pcCfg->getEfficientFieldIRAPEnabled())
   {
-#endif // EFFICIENT_FIELD_IRAP
-#if ALLOW_RECOVERY_POINT_AS_RAP
     if(m_pcCfg->getDecodingRefreshType() == 3)
     {
       eSliceType = (pocLast == 0 || pocCurr % m_pcCfg->getIntraPeriod() == 0             || m_pcGOPEncoder->getGOPSize() == 0) ? I_SLICE : eSliceType;
     }
     else
     {
-#endif
       eSliceType = (pocLast == 0 || (pocCurr - (isField ? 1 : 0)) % m_pcCfg->getIntraPeriod() == 0 || m_pcGOPEncoder->getGOPSize() == 0) ? I_SLICE : eSliceType;
-#if ALLOW_RECOVERY_POINT_AS_RAP
     }
-#endif
-#if EFFICIENT_FIELD_IRAP
   }
-#endif
 
   rpcSlice->setSliceType    ( eSliceType );
 
@@ -335,8 +320,6 @@ Void TEncSlice::initEncSlice( TComPic* pcPic, Int pocLast, Int pocCurr, Int iNum
     Int    NumberBFrames = ( m_pcCfg->getGOPSize() - 1 );
     Int    SHIFT_QP = 12;
 
-    Double dLambda_scale = 1.0 - Clip3( 0.0, 0.5, 0.05*(Double)(isField ? NumberBFrames/2 : NumberBFrames) );
-
 #if FULL_NBIT
     Int    bitdepth_luma_qp_scale = 6 * (rpcSlice->getSPS()->getBitDepth(CHANNEL_TYPE_LUMA) - 8);
 #else
@@ -350,8 +333,18 @@ Void TEncSlice::initEncSlice( TComPic* pcPic, Int pocLast, Int pocCurr, Int iNum
     Double dQPFactor = m_pcCfg->getGOPEntry(iGOPid).m_QPFactor;
     if ( eSliceType==I_SLICE )
     {
-      dQPFactor=0.57*dLambda_scale;
+      if (m_pcCfg->getIntraQpFactor()>=0.0 && m_pcCfg->getGOPEntry(iGOPid).m_sliceType != I_SLICE)
+      {
+        dQPFactor=m_pcCfg->getIntraQpFactor();
+      }
+      else
+      {
+        Double dLambda_scale = 1.0 - Clip3( 0.0, 0.5, 0.05*(Double)(isField ? NumberBFrames/2 : NumberBFrames) );
+        
+        dQPFactor=0.57*dLambda_scale;
+      }
     }
+    
     dLambda = dQPFactor*pow( 2.0, qp_temp/3.0 );
 
     if ( depth>0 )
@@ -381,38 +374,40 @@ Void TEncSlice::initEncSlice( TComPic* pcPic, Int pocLast, Int pocCurr, Int iNum
   dQP     = m_pdRdPicQp    [0];
   iQP     = m_piRdPicQp    [0];
 
-  if( rpcSlice->getSliceType( ) != I_SLICE )
+  const Int temporalId=m_pcCfg->getGOPEntry(iGOPid).m_temporalId;
+  const std::vector<Double> &intraLambdaModifiers=m_pcCfg->getIntraLambdaModifier();
+
+  Double lambdaModifier;
+  if( rpcSlice->getSliceType( ) != I_SLICE || intraLambdaModifiers.empty())
   {
-    dLambda *= m_pcCfg->getLambdaModifier( m_pcCfg->getGOPEntry(iGOPid).m_temporalId );
+    lambdaModifier = m_pcCfg->getLambdaModifier( temporalId );
+  }
+  else
+  {
+    lambdaModifier = intraLambdaModifiers[ (temporalId < intraLambdaModifiers.size()) ? temporalId : (intraLambdaModifiers.size()-1) ];
   }
 
+  dLambda *= lambdaModifier;
   setUpLambda(rpcSlice, dLambda, iQP);
 
-#if HB_LAMBDA_FOR_LDC
-  // restore original slice type
-
-#if EFFICIENT_FIELD_IRAP
-  if(!(isField && pocLast == 1))
+  if (m_pcCfg->getFastMEForGenBLowDelayEnabled())
   {
-#endif // EFFICIENT_FIELD_IRAP
-#if ALLOW_RECOVERY_POINT_AS_RAP
-    if(m_pcCfg->getDecodingRefreshType() == 3)
-    {
-      eSliceType = (pocLast == 0 || (pocCurr)                     % m_pcCfg->getIntraPeriod() == 0 || m_pcGOPEncoder->getGOPSize() == 0) ? I_SLICE : eSliceType;
-    }
-    else
-    {
-#endif
-      eSliceType = (pocLast == 0 || (pocCurr - (isField ? 1 : 0)) % m_pcCfg->getIntraPeriod() == 0 || m_pcGOPEncoder->getGOPSize() == 0) ? I_SLICE : eSliceType;
-#if ALLOW_RECOVERY_POINT_AS_RAP
-    }
-#endif
-#if EFFICIENT_FIELD_IRAP
-  }
-#endif // EFFICIENT_FIELD_IRAP
+    // restore original slice type
 
-  rpcSlice->setSliceType        ( eSliceType );
-#endif
+    if(!(isField && pocLast == 1) || !m_pcCfg->getEfficientFieldIRAPEnabled())
+    {
+      if(m_pcCfg->getDecodingRefreshType() == 3)
+      {
+        eSliceType = (pocLast == 0 || (pocCurr)                     % m_pcCfg->getIntraPeriod() == 0 || m_pcGOPEncoder->getGOPSize() == 0) ? I_SLICE : eSliceType;
+      }
+      else
+      {
+        eSliceType = (pocLast == 0 || (pocCurr - (isField ? 1 : 0)) % m_pcCfg->getIntraPeriod() == 0 || m_pcGOPEncoder->getGOPSize() == 0) ? I_SLICE : eSliceType;
+      }
+    }
+
+    rpcSlice->setSliceType        ( eSliceType );
+  }
 
   if (m_pcCfg->getUseRecalculateQPAccordingToLambda())
   {
@@ -427,7 +422,7 @@ Void TEncSlice::initEncSlice( TComPic* pcPic, Int pocLast, Int pocCurr, Int iNum
   rpcSlice->setSliceQpDelta      ( 0 );
   rpcSlice->setSliceChromaQpDelta( COMPONENT_Cb, 0 );
   rpcSlice->setSliceChromaQpDelta( COMPONENT_Cr, 0 );
-  rpcSlice->setUseChromaQpAdj( rpcSlice->getPPS()->getChromaQpAdjTableSize() > 0 );
+  rpcSlice->setUseChromaQpAdj( rpcSlice->getPPS()->getPpsRangeExtension().getChromaQpOffsetListEnabledFlag() );
   rpcSlice->setNumRefIdx(REF_PIC_LIST_0,m_pcCfg->getGOPEntry(iGOPid).m_numRefPicsActive);
   rpcSlice->setNumRefIdx(REF_PIC_LIST_1,m_pcCfg->getGOPEntry(iGOPid).m_numRefPicsActive);
 
@@ -466,7 +461,7 @@ Void TEncSlice::initEncSlice( TComPic* pcPic, Int pocLast, Int pocCurr, Int iNum
 
   rpcSlice->setDepth            ( depth );
 
-  pcPic->setTLayer( m_pcCfg->getGOPEntry(iGOPid).m_temporalId );
+  pcPic->setTLayer( temporalId );
   if(eSliceType==I_SLICE)
   {
     pcPic->setTLayer(0);
@@ -501,6 +496,7 @@ Void TEncSlice::resetQP( TComPic* pic, Int sliceQP, Double lambda )
 // Public member functions
 // ====================================================================================================================
 
+//! set adaptive search range based on poc difference
 Void TEncSlice::setSearchRange( TComSlice* pcSlice )
 {
   Int iCurrPOC = pcSlice->getPOC();
@@ -510,15 +506,14 @@ Void TEncSlice::setSearchRange( TComSlice* pcSlice )
   Int iMaxSR = m_pcCfg->getSearchRange();
   Int iNumPredDir = pcSlice->isInterP() ? 1 : 2;
 
-  for (Int iDir = 0; iDir <= iNumPredDir; iDir++)
+  for (Int iDir = 0; iDir < iNumPredDir; iDir++)
   {
-    //RefPicList e = (RefPicList)iDir;
     RefPicList  e = ( iDir ? REF_PIC_LIST_1 : REF_PIC_LIST_0 );
     for (Int iRefIdx = 0; iRefIdx < pcSlice->getNumRefIdx(e); iRefIdx++)
     {
       iRefPOC = pcSlice->getRefPic(e, iRefIdx)->getPOC();
-      Int iNewSR = Clip3(8, iMaxSR, (iMaxSR*ADAPT_SR_SCALE*abs(iCurrPOC - iRefPOC)+iOffset)/iGOPSize);
-      m_pcPredSearch->setAdaptiveSearchRange(iDir, iRefIdx, iNewSR);
+      Int newSearchRange = Clip3(m_pcCfg->getMinSearchWindow(), iMaxSR, (iMaxSR*ADAPT_SR_SCALE*abs(iCurrPOC - iRefPOC)+iOffset)/iGOPSize);
+      m_pcPredSearch->setAdaptiveSearchRange(iDir, iRefIdx, newSearchRange);
     }
   }
 }
@@ -540,9 +535,26 @@ Void TEncSlice::precompressSlice( TComPic* pcPic )
   {
     printf( "\nMultiple QP optimization is not allowed when rate control is enabled." );
     assert(0);
+    return;
   }
 
   TComSlice* pcSlice        = pcPic->getSlice(getSliceIdx());
+
+  if (pcSlice->getDependentSliceSegmentFlag())
+  {
+    // if this is a dependent slice segment, then it was optimised
+    // when analysing the entire slice.
+    return;
+  }
+
+  if (pcSlice->getSliceMode()==FIXED_NUMBER_OF_BYTES)
+  {
+    // TODO: investigate use of average cost per CTU so that this Slice Mode can be used.
+    printf( "\nUnable to optimise Slice-level QP if Slice Mode is set to FIXED_NUMBER_OF_BYTES\n" );
+    assert(0);
+    return;
+  }
+
   Double     dPicRdCostBest = MAX_DOUBLE;
   UInt       uiQpIdxBest = 0;
 
@@ -564,7 +576,6 @@ Void TEncSlice::precompressSlice( TComPic* pcPic )
   }
   m_pcRdCost      ->setFrameLambda(dFrameLambda);
 
-  const UInt initialSliceQp=pcSlice->getSliceQp();
   // for each QP candidate
   for ( UInt uiQpIdx = 0; uiQpIdx < 2 * m_pcCfg->getDeltaQpRD() + 1; uiQpIdx++ )
   {
@@ -575,17 +586,18 @@ Void TEncSlice::precompressSlice( TComPic* pcPic )
     setUpLambda(pcSlice, m_pdRdPicLambda[uiQpIdx], m_piRdPicQp    [uiQpIdx]);
 
     // try compress
-    compressSlice   ( pcPic );
+    compressSlice   ( pcPic, true, m_pcCfg->getFastDeltaQp());
 
-    Double dPicRdCost;
-    UInt64 uiPicDist        = m_uiPicDist;
-    // TODO: will this work if multiple slices are being used? There may not be any reconstruction data yet.
-    //       Will this also be ideal if a byte-restriction is placed on the slice?
-    //         - what if the last CTU was sometimes included, sometimes not, and that had all the distortion?
-    m_pcGOPEncoder->preLoopFilterPicAll( pcPic, uiPicDist );
+    UInt64 uiPicDist        = m_uiPicDist; // Distortion, as calculated by compressSlice.
+    // NOTE: This distortion is the chroma-weighted SSE distortion for the slice.
+    //       Previously a standard SSE distortion was calculated (for the entire frame).
+    //       Which is correct?
+
+    // TODO: Update loop filter, SAO and distortion calculation to work on one slice only.
+    // m_pcGOPEncoder->preLoopFilterPicAll( pcPic, uiPicDist );
 
     // compute RD cost and choose the best
-    dPicRdCost = m_pcRdCost->calcRdCost64( m_uiPicTotalBits, uiPicDist, true, DF_SSE_FRAME);
+    Double dPicRdCost = m_pcRdCost->calcRdCost( (Double)m_uiPicTotalBits, (Double)uiPicDist, DF_SSE_FRAME);
 
     if ( dPicRdCost < dPicRdCostBest )
     {
@@ -594,12 +606,6 @@ Void TEncSlice::precompressSlice( TComPic* pcPic )
     }
   }
 
-  if (pcSlice->getDependentSliceSegmentFlag() && initialSliceQp!=m_piRdPicQp[uiQpIdxBest] )
-  {
-    // TODO: this won't work with dependent slices: they do not have their own QP.
-    fprintf(stderr,"ERROR - attempt to change QP for a dependent slice-segment, having already coded the slice\n");
-    assert(pcSlice->getDependentSliceSegmentFlag()==false || initialSliceQp==m_piRdPicQp[uiQpIdxBest]);
-  }
   // set best values
   pcSlice       ->setSliceQp             ( m_piRdPicQp    [uiQpIdxBest] );
 #if ADAPTIVE_QP_SELECTION
@@ -608,7 +614,7 @@ Void TEncSlice::precompressSlice( TComPic* pcPic )
   setUpLambda(pcSlice, m_pdRdPicLambda[uiQpIdxBest], m_piRdPicQp    [uiQpIdxBest]);
 }
 
-Void TEncSlice::calCostSliceI(TComPic* pcPic)
+Void TEncSlice::calCostSliceI(TComPic* pcPic) // TODO: this only analyses the first slice segment. What about the others?
 {
   Double            iSumHadSlice      = 0;
   TComSlice * const pcSlice           = pcPic->getSlice(getSliceIdx());
@@ -643,13 +649,21 @@ Void TEncSlice::calCostSliceI(TComPic* pcPic)
 
 /** \param pcPic   picture class
  */
-Void TEncSlice::compressSlice( TComPic* pcPic )
+Void TEncSlice::compressSlice( TComPic* pcPic, const Bool bCompressEntireSlice, const Bool bFastDeltaQP )
 {
+  // if bCompressEntireSlice is true, then the entire slice (not slice segment) is compressed,
+  //   effectively disabling the slice-segment-mode.
+
   UInt   startCtuTsAddr;
   UInt   boundingCtuTsAddr;
   TComSlice* const pcSlice            = pcPic->getSlice(getSliceIdx());
   pcSlice->setSliceSegmentBits(0);
   xDetermineStartAndBoundingCtuTsAddr ( startCtuTsAddr, boundingCtuTsAddr, pcPic );
+  if (bCompressEntireSlice)
+  {
+    boundingCtuTsAddr = pcSlice->getSliceCurEndCtuTsAddr();
+    pcSlice->setSliceSegmentCurEndCtuTsAddr(boundingCtuTsAddr);
+  }
 
   // initialize cost values - these are used by precompressSlice (they should be parameters).
   m_uiPicTotalBits  = 0;
@@ -665,6 +679,8 @@ Void TEncSlice::compressSlice( TComPic* pcPic )
 
   TComBitCounter  tempBitCounter;
   const UInt      frameWidthInCtus = pcPic->getPicSym()->getFrameWidthInCtus();
+  
+  m_pcCuEncoder->setFastDeltaQp(bFastDeltaQP);
 
   //------------------------------------------------------------------------------
   //  Weighted Prediction parameters estimation.
@@ -687,7 +703,7 @@ Void TEncSlice::compressSlice( TComPic* pcPic )
       printf("Weighted Prediction is not supported with slice mode determined by max number of bins.\n"); exit(0);
     }
 
-    xEstimateWPParamSlice( pcSlice );
+    xEstimateWPParamSlice( pcSlice, m_pcCfg->getWeightedPredictionMethod() );
     pcSlice->initWpScaling(pcSlice->getSPS());
 
     // check WP on/off
@@ -698,7 +714,7 @@ Void TEncSlice::compressSlice( TComPic* pcPic )
   if( m_pcCfg->getUseAdaptQpSelect() && !(pcSlice->getDependentSliceSegmentFlag()))
   {
     // TODO: this won't work with dependent slices: they do not have their own QP. Check fix to mask clause execution with && !(pcSlice->getDependentSliceSegmentFlag())
-    m_pcTrQuant->clearSliceARLCnt();
+    m_pcTrQuant->clearSliceARLCnt(); // TODO: this looks wrong for multiple slices - the results of all but the last slice will be cleared before they are used (all slices compressed, and then all slices encoded)
     if(pcSlice->getSliceType()!=I_SLICE)
     {
       Int qpBase = pcSlice->getSliceQpBase();
@@ -718,7 +734,7 @@ Void TEncSlice::compressSlice( TComPic* pcPic )
     if( pcSlice->getDependentSliceSegmentFlag() && ctuRsAddr != firstCtuRsAddrOfTile )
     {
       // This will only occur if dependent slice-segments (m_entropyCodingSyncContextState=true) are being used.
-      if( pCurrentTile->getTileWidthInCtus() >= 2 || !m_pcCfg->getWaveFrontsynchro() )
+      if( pCurrentTile->getTileWidthInCtus() >= 2 || !m_pcCfg->getEntropyCodingSyncEnabledFlag() )
       {
         m_pppcRDSbacCoder[0][CI_CURR_BEST]->loadContexts( &m_lastSliceSegmentEndContextState );
       }
@@ -743,7 +759,7 @@ Void TEncSlice::compressSlice( TComPic* pcPic )
     {
       m_pppcRDSbacCoder[0][CI_CURR_BEST]->resetEntropy(pcSlice);
     }
-    else if ( ctuXPosInCtus == tileXPosInCtus && m_pcCfg->getWaveFrontsynchro())
+    else if ( ctuXPosInCtus == tileXPosInCtus && m_pcCfg->getEntropyCodingSyncEnabledFlag())
     {
       // reset and then update contexts to the state at the end of the top-right CTU (if within current slice and tile).
       m_pppcRDSbacCoder[0][CI_CURR_BEST]->resetEntropy(pcSlice);
@@ -796,7 +812,6 @@ Void TEncSlice::compressSlice( TComPic* pcPic )
         estQP     = Clip3( -pcSlice->getSPS()->getQpBDOffset(CHANNEL_TYPE_LUMA), MAX_QP, estQP );
 
         m_pcRdCost->setLambda(estLambda, pcSlice->getSPS()->getBitDepths());
-        m_pcOpenCLME->setLambda( estLambda);
 
 #if RDOQ_CHROMA_LAMBDA
         // set lambda for RDOQ
@@ -831,6 +846,7 @@ Void TEncSlice::compressSlice( TComPic* pcPic )
     // encode CTU and calculate the true bit counters.
     m_pcCuEncoder->encodeCtu( pCtu );
 
+
     pRDSbacCoder->setBinCountingEnableFlag( false );
 
     const Int numberOfWrittenBits = m_pcEntropyCoder->getNumberOfWrittenBits();
@@ -845,7 +861,7 @@ Void TEncSlice::compressSlice( TComPic* pcPic )
       pcSlice->setSliceCurEndCtuTsAddr(validEndOfSliceCtuTsAddr);
       boundingCtuTsAddr=validEndOfSliceCtuTsAddr;
     }
-    else if(pcSlice->getSliceSegmentMode()==FIXED_NUMBER_OF_BYTES && pcSlice->getSliceSegmentBits()+numberOfWrittenBits > (pcSlice->getSliceSegmentArgument()<<3))
+    else if((!bCompressEntireSlice) && pcSlice->getSliceSegmentMode()==FIXED_NUMBER_OF_BYTES && pcSlice->getSliceSegmentBits()+numberOfWrittenBits > (pcSlice->getSliceSegmentArgument()<<3))
     {
       pcSlice->setSliceSegmentCurEndCtuTsAddr(validEndOfSliceCtuTsAddr);
       boundingCtuTsAddr=validEndOfSliceCtuTsAddr;
@@ -860,7 +876,7 @@ Void TEncSlice::compressSlice( TComPic* pcPic )
     pcSlice->setSliceSegmentBits(pcSlice->getSliceSegmentBits()+numberOfWrittenBits);
 
     // Store probabilities of second CTU in line into buffer - used only if wavefront-parallel-processing is enabled.
-    if ( ctuXPosInCtus == tileXPosInCtus+1 && m_pcCfg->getWaveFrontsynchro())
+    if ( ctuXPosInCtus == tileXPosInCtus+1 && m_pcCfg->getEntropyCodingSyncEnabledFlag())
     {
       m_entropyCodingSyncContextState.loadContexts(m_pppcRDSbacCoder[0][CI_CURR_BEST]);
     }
@@ -890,7 +906,6 @@ Void TEncSlice::compressSlice( TComPic* pcPic )
         actualQP = pCtu->getQP( 0 );
       }
       m_pcRdCost->setLambda(oldLambda, pcSlice->getSPS()->getBitDepths());
-      m_pcOpenCLME->setLambda( oldLambda);
       m_pcRateCtrl->getRCPic()->updateAfterCTU( m_pcRateCtrl->getRCPic()->getLCUCoded(), actualBits, actualQP, actualLambda,
                                                 pCtu->getSlice()->getSliceType() == I_SLICE ? 0 : m_pcCfg->getLCULevelRC() );
     }
@@ -1093,7 +1108,7 @@ Void TEncSlice::encodeSlice   ( TComPic* pcPic, TComOutputBitstream* pcSubstream
 #if ADAPTIVE_QP_SELECTION
   if( m_pcCfg->getUseAdaptQpSelect() )
   {
-    m_pcTrQuant->storeSliceQpNext(pcSlice);
+    m_pcTrQuant->storeSliceQpNext(pcSlice); // TODO: this will only be storing the adaptive QP state of the very last slice-segment that is not dependent in the frame... Perhaps this should be moved to the compress slice loop.
   }
 #endif
 
@@ -1110,7 +1125,7 @@ Void TEncSlice::encodeSlice   ( TComPic* pcPic, TComOutputBitstream* pcSubstream
 }
 
 Void TEncSlice::calculateBoundingCtuTsAddrForSlice(UInt &startCtuTSAddrSlice, UInt &boundingCtuTSAddrSlice, Bool &haveReachedTileBoundary,
-                                                   TComPic* pcPic, const Int sliceMode, const Int sliceArgument, const UInt sliceCurEndCtuTSAddr)
+                                                   TComPic* pcPic, const Int sliceMode, const Int sliceArgument)
 {
   TComSlice* pcSlice = pcPic->getSlice(getSliceIdx());
   const UInt numberOfCtusInFrame = pcPic->getNumberOfCtusInFrame();
@@ -1211,7 +1226,7 @@ Void TEncSlice::xDetermineStartAndBoundingCtuTsAddr  ( UInt& startCtuTsAddr, UIn
   Bool haveReachedTileBoundarySlice  = false;
   UInt boundingCtuTsAddrSlice;
   calculateBoundingCtuTsAddrForSlice(startCtuTsAddrSlice, boundingCtuTsAddrSlice, haveReachedTileBoundarySlice, pcPic,
-                                     m_pcCfg->getSliceMode(), m_pcCfg->getSliceArgument(), pcSlice->getSliceCurEndCtuTsAddr());
+                                     m_pcCfg->getSliceMode(), m_pcCfg->getSliceArgument());
   pcSlice->setSliceCurEndCtuTsAddr(   boundingCtuTsAddrSlice );
   pcSlice->setSliceCurStartCtuTsAddr( startCtuTsAddrSlice    );
 
@@ -1220,7 +1235,7 @@ Void TEncSlice::xDetermineStartAndBoundingCtuTsAddr  ( UInt& startCtuTsAddr, UIn
   Bool haveReachedTileBoundarySliceSegment = false;
   UInt boundingCtuTsAddrSliceSegment;
   calculateBoundingCtuTsAddrForSlice(startCtuTsAddrSliceSegment, boundingCtuTsAddrSliceSegment, haveReachedTileBoundarySliceSegment, pcPic,
-                                     m_pcCfg->getSliceSegmentMode(), m_pcCfg->getSliceSegmentArgument(), pcSlice->getSliceSegmentCurEndCtuTsAddr());
+                                     m_pcCfg->getSliceSegmentMode(), m_pcCfg->getSliceSegmentArgument());
   if (boundingCtuTsAddrSliceSegment>boundingCtuTsAddrSlice)
   {
     boundingCtuTsAddrSliceSegment = boundingCtuTsAddrSlice;

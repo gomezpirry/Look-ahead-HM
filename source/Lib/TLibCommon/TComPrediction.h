@@ -84,8 +84,8 @@ protected:
   Pel*   m_pLumaRecBuffer;       ///< array for downsampled reconstructed luma sample
   Int    m_iLumaRecStride;       ///< stride of #m_pLumaRecBuffer array
 
-  Void xPredIntraAng            ( Int bitDepth, const Pel* pSrc, Int srcStride, Pel* pDst, Int dstStride, UInt width, UInt height, ChannelType channelType, ChromaFormat format, UInt dirMode, Bool blkAboveAvailable, Bool blkLeftAvailable, const Bool bEnableEdgeFilters );
-  Void xPredIntraPlanar         ( const Pel* pSrc, Int srcStride, Pel* rpDst, Int dstStride, UInt width, UInt height, ChannelType channelType, ChromaFormat format );
+  Void xPredIntraAng            ( Int bitDepth, const Pel* pSrc, Int srcStride, Pel* pDst, Int dstStride, UInt width, UInt height, ChannelType channelType, UInt dirMode, const Bool bEnableEdgeFilters );
+  Void xPredIntraPlanar         ( const Pel* pSrc, Int srcStride, Pel* rpDst, Int dstStride, UInt width, UInt height );
 
   // motion compensation functions
   Void xPredInterUni            ( TComDataCU* pcCU,                          UInt uiPartAddr,               Int iWidth, Int iHeight, RefPicList eRefPicList, TComYuv* pcYuvPred, Bool bi=false          );
@@ -114,9 +114,9 @@ public:
   Void getMvPredAMVP              ( TComDataCU* pcCU, UInt uiPartIdx, UInt uiPartAddr, RefPicList eRefPicList, TComMv& rcMvPred );
 
   // Angular Intra
-  Void predIntraAng               ( const ComponentID compID, UInt uiDirMode, Pel *piOrg /* Will be null for decoding */, UInt uiOrgStride, Pel* piPred, UInt uiStride, TComTU &rTu, Bool bAbove, Bool bLeft, const Bool bUseFilteredPredSamples, const Bool bUseLosslessDPCM = false );
+  Void predIntraAng               ( const ComponentID compID, UInt uiDirMode, Pel *piOrg /* Will be null for decoding */, UInt uiOrgStride, Pel* piPred, UInt uiStride, TComTU &rTu, const Bool bUseFilteredPredSamples, const Bool bUseLosslessDPCM = false );
 
-  Pel  predIntraGetPredValDC      ( const Pel* pSrc, Int iSrcStride, UInt iWidth, UInt iHeight, ChannelType channelType, ChromaFormat format, Bool bAbove, Bool bLeft );
+  Pel  predIntraGetPredValDC      ( const Pel* pSrc, Int iSrcStride, UInt iWidth, UInt iHeight);
 
   Pel*  getPredictorPtr           ( const ComponentID compID, const Bool bUseFilteredPredictions )
   {
@@ -124,10 +124,8 @@ public:
   }
 
   // This function is actually still in TComPattern.cpp
-  /// set parameters from CU data for accessing ADI data
-  Void initAdiPatternChType ( TComTU &rTu,
-                              Bool&       bAbove,
-                              Bool&       bLeft,
+  /// set parameters from CU data for accessing intra data
+  Void initIntraPatternChType ( TComTU &rTu,
                               const ComponentID compID, const Bool bFilterRefSamples
                               DEBUG_STRING_FN_DECLARE(sDebug)
                               );

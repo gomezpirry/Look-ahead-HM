@@ -89,10 +89,10 @@ protected:
   virtual ~SyntaxElementParser() {};
 
 #if RExt__DECODER_DEBUG_BIT_STATISTICS
-  Void  xReadCode    ( UInt   length, UInt& val, const Char *pSymbolName );
-  Void  xReadUvlc    ( UInt&  val, const Char *pSymbolName );
-  Void  xReadSvlc    ( Int&   val, const Char *pSymbolName );
-  Void  xReadFlag    ( UInt&  val, const Char *pSymbolName );
+  Void  xReadCode    ( UInt   length, UInt& val, const TChar *pSymbolName );
+  Void  xReadUvlc    ( UInt&  val, const TChar *pSymbolName );
+  Void  xReadSvlc    ( Int&   val, const TChar *pSymbolName );
+  Void  xReadFlag    ( UInt&  val, const TChar *pSymbolName );
 #else
   Void  xReadCode    ( UInt   length, UInt& val );
   Void  xReadUvlc    ( UInt&  val );
@@ -100,15 +100,35 @@ protected:
   Void  xReadFlag    ( UInt&  val );
 #endif
 #if ENC_DEC_TRACE
-  Void  xReadCodeTr  (UInt  length, UInt& rValue, const Char *pSymbolName);
-  Void  xReadUvlcTr  (              UInt& rValue, const Char *pSymbolName);
-  Void  xReadSvlcTr  (               Int& rValue, const Char *pSymbolName);
-  Void  xReadFlagTr  (              UInt& rValue, const Char *pSymbolName);
+  Void  xReadCodeTr  (UInt  length, UInt& rValue, const TChar *pSymbolName);
+  Void  xReadUvlcTr  (              UInt& rValue, const TChar *pSymbolName);
+  Void  xReadSvlcTr  (               Int& rValue, const TChar *pSymbolName);
+  Void  xReadFlagTr  (              UInt& rValue, const TChar *pSymbolName);
 #endif
 public:
   Void  setBitstream ( TComInputBitstream* p )   { m_pcBitstream = p; }
   TComInputBitstream* getBitstream() { return m_pcBitstream; }
+
+protected:
+  Void xReadRbspTrailingBits();
 };
+
+class AUDReader: public SyntaxElementParser
+{
+public:
+  AUDReader() {};
+  virtual ~AUDReader() {};
+  Void parseAccessUnitDelimiter(TComInputBitstream* bs, UInt &picType);
+};
+
+class FDReader: public SyntaxElementParser
+{
+public:
+  FDReader() {};
+  virtual ~FDReader() {};
+  Void parseFillerData(TComInputBitstream* bs, UInt &fdSize);
+};
+
 
 //! \}
 

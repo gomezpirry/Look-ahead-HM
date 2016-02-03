@@ -44,7 +44,7 @@ using namespace std;
 //! \ingroup TLibEncoder
 //! \{
 
-static const Char emulation_prevention_three_byte[] = {3};
+static const UChar emulation_prevention_three_byte[] = {3};
 
 Void writeNalUnitHeader(ostream& out, OutputNALUnit& nalu)       // nal_unit_header()
 {
@@ -55,7 +55,7 @@ TComOutputBitstream bsNALUHeader;
   bsNALUHeader.write(nalu.m_nuhLayerId, 6);   // nuh_layer_id
   bsNALUHeader.write(nalu.m_temporalId+1, 3); // nuh_temporal_id_plus1
 
-  out.write(bsNALUHeader.getByteStream(), bsNALUHeader.getByteStreamLength());
+  out.write(reinterpret_cast<const TChar*>(bsNALUHeader.getByteStream()), bsNALUHeader.getByteStreamLength());
 }
 /**
  * write nalu to bytestream out, performing RBSP anti startcode
@@ -119,16 +119,7 @@ Void write(ostream& out, OutputNALUnit& nalu)
   {
     outputBuffer[outputAmount++]=emulation_prevention_three_byte[0];
   }
-  out.write((Char*)&(*outputBuffer.begin()), outputAmount);
-}
-
-/**
- * Write rbsp_trailing_bits to bs causing it to become byte-aligned
- */
-Void writeRBSPTrailingBits(TComOutputBitstream& bs)
-{
-  bs.write( 1, 1 );
-  bs.writeAlignZero();
+  out.write(reinterpret_cast<const TChar*>(&(*outputBuffer.begin())), outputAmount);
 }
 
 //! \}

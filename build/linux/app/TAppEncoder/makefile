@@ -13,7 +13,7 @@ SRC_DIR3		=
 SRC_DIR4		=
 
 USER_INC_DIRS	= -I$(SRC_DIR)
-USER_LIB_DIRS	= -L$(LIB_DIR)
+USER_LIB_DIRS	=
 
 ifeq ($(HIGHBITDEPTH), 1)
 HBD=HighBitDepth
@@ -37,7 +37,7 @@ OBJS          		= 	\
 					$(OBJ_DIR)/TAppEncTop.o \
 
 # set libs to link with
-LIBS				= -ldl 
+LIBS				= -ldl
 
 DEBUG_LIBS			=
 RELEASE_LIBS		=
@@ -48,12 +48,12 @@ DYN_LIBS			=
 
 DYN_DEBUG_LIBS		= -lTLibEncoder$(HBD)d -lTLibCommon$(HBD)d -lTLibVideoIO$(HBD)d -lTAppCommon$(HBD)d
 DYN_DEBUG_PREREQS		= $(LIB_DIR)/libTLibEncoder$(HBD)d.a $(LIB_DIR)/libTLibCommon$(HBD)d.a $(LIB_DIR)/libTLibVideoIO$(HBD)d.a $(LIB_DIR)/libTAppCommon$(HBD)d.a
-STAT_DEBUG_LIBS		= -lTLibEncoder$(HBD)Staticd -lTLibCommon$(HBD)Staticd -lTLibVideoIO$(HBD)Staticd -lTAppCommon$(HBD)Staticd -lOpenCL
+STAT_DEBUG_LIBS		= -lTLibEncoder$(HBD)Staticd -lTLibCommon$(HBD)Staticd -lTLibVideoIO$(HBD)Staticd -lTAppCommon$(HBD)Staticd
 STAT_DEBUG_PREREQS		= $(LIB_DIR)/libTLibEncoder$(HBD)Staticd.a $(LIB_DIR)/libTLibCommon$(HBD)Staticd.a $(LIB_DIR)/libTLibVideoIO$(HBD)Staticd.a $(LIB_DIR)/libTAppCommon$(HBD)Staticd.a
 
 DYN_RELEASE_LIBS	= -lTLibEncoder$(HBD) -lTLibCommon$(HBD) -lTLibVideoIO$(HBD) -lTAppCommon$(HBD)
 DYN_RELEASE_PREREQS	= $(LIB_DIR)/libTLibEncoder$(HBD).a $(LIB_DIR)/libTLibCommon$(HBD).a $(LIB_DIR)/libTLibVideoIO$(HBD).a $(LIB_DIR)/libTAppCommon$(HBD).a
-STAT_RELEASE_LIBS	= -lTLibEncoder$(HBD)Static -lTLibCommon$(HBD)Static -lTLibVideoIO$(HBD)Static -lTAppCommon$(HBD)Static -lOpenCL
+STAT_RELEASE_LIBS	= -lTLibEncoder$(HBD)Static -lTLibCommon$(HBD)Static -lTLibVideoIO$(HBD)Static -lTAppCommon$(HBD)Static
 STAT_RELEASE_PREREQS	= $(LIB_DIR)/libTLibEncoder$(HBD)Static.a $(LIB_DIR)/libTLibCommon$(HBD)Static.a $(LIB_DIR)/libTLibVideoIO$(HBD)Static.a $(LIB_DIR)/libTAppCommon$(HBD)Static.a
 
 

@@ -49,8 +49,6 @@
 #include "TEncEntropy.h"
 #include "TEncSbac.h"
 #include "TEncCfg.h"
-#include "TEncOpenCL.h"
-
 
 
 //! \ingroup TLibEncoder
@@ -70,21 +68,17 @@ static const UInt NUM_MV_PREDICTORS=3;
 class TEncSearch : public TComPrediction
 {
 private:
-    
   TCoeff**        m_ppcQTTempCoeff[MAX_NUM_COMPONENT /* 0->Y, 1->Cb, 2->Cr*/];
-  TCoeff*         m_pcQTTempCoeff[MAX_NUM_COMPONENT];
 #if ADAPTIVE_QP_SELECTION
   TCoeff**        m_ppcQTTempArlCoeff[MAX_NUM_COMPONENT];
-  TCoeff*         m_pcQTTempArlCoeff[MAX_NUM_COMPONENT];
 #endif
   UChar*          m_puhQTTempTrIdx;
   UChar*          m_puhQTTempCbf[MAX_NUM_COMPONENT];
 
   TComYuv*        m_pcQTTempTComYuv;
   TComYuv         m_tmpYuvPred; // To be used in xGetInterPredictionError() to avoid constant memory allocation/deallocation
-  Int             indexBlock;
 
-  Char*           m_phQTTempCrossComponentPredictionAlpha[MAX_NUM_COMPONENT];
+  SChar*          m_phQTTempCrossComponentPredictionAlpha[MAX_NUM_COMPONENT];
   Pel*            m_pSharedPredTransformSkip[MAX_NUM_COMPONENT];
   TCoeff*         m_pcQTTempTUCoeff[MAX_NUM_COMPONENT];
   UChar*          m_puhQTTempTransformSkipFlag[MAX_NUM_COMPONENT];
@@ -96,7 +90,7 @@ private:
 protected:
   // interface to option
   TEncCfg*        m_pcEncCfg;
-  TEncOpenCL*     m_ppcOpenCLME;
+
   // interface to classes
   TComTrQuant*    m_pcTrQuant;
   TComRdCost*     m_pcRdCost;
@@ -105,15 +99,10 @@ protected:
   // ME parameters
   Int             m_iSearchRange;
   Int             m_bipredSearchRange; // Search range for bi-prediction
-  Int             m_iFastSearch;
+  MESearchMethod  m_motionEstimationSearchMethod;
   Int             m_aaiAdaptSR[MAX_NUM_REF_LIST_ADAPT_SR][MAX_IDX_ADAPT_SR];
-  TComMv          m_cSrchRngLT;
-  TComMv          m_cSrchRngRB;
   TComMv          m_acMvPredictors[NUM_MV_PREDICTORS]; // Left, Above, AboveRight. enum MVP_DIR first NUM_MV_PREDICTORS entries are suitable for accessing.
 
-  TComMv          allMotionVectors[2][33][NUM_CTU_PARTS]; // Store Motion Vectors calculated with OpenCL Added by: Augusto
-  Distortion      allRuiCost[2][33][NUM_CTU_PARTS]; // Store ruiCost calculated with OpenCL Added by: Augusto
-  
   // RD computation
   TEncSbac***     m_pppcRDSbacCoder;
   TEncSbac*       m_pcRDGoOnSbacCoder;
@@ -121,7 +110,6 @@ protected:
 
   // Misc.
   Pel*            m_pTempPel;
-  const UInt*     m_puiDFilter;
 
   // AMVP cost computation
   // UInt            m_auiMVPIdxCost[AMVP_MAX_NUM_CANDS+1][AMVP_MAX_NUM_CANDS];
@@ -129,23 +117,26 @@ protected:
 
   TComMv          m_integerMv2Nx2N[NUM_REF_PIC_LIST_01][MAX_NUM_REF];
 
+  Bool            m_isInitialized;
 public:
   TEncSearch();
   virtual ~TEncSearch();
 
-  Void init(  TEncCfg*      pcEncCfg,
-            TComTrQuant*  pcTrQuant,
-            Int           iSearchRange,
-            Int           bipredSearchRange,
-            Int           iFastSearch,
-            const UInt    maxCUWidth,
-            const UInt    maxCUHeight,
-            const UInt    maxTotalCUDepth,
-            TEncEntropy*  pcEntropyCoder,
-            TComRdCost*   pcRdCost,
-            TEncSbac***   pppcRDSbacCoder,
-            TEncSbac*     pcRDGoOnSbacCoder,
-	    TEncOpenCL*   pcOpenCLME);
+  Void init(TEncCfg*       pcEncCfg,
+            TComTrQuant*   pcTrQuant,
+            Int            iSearchRange,
+            Int            bipredSearchRange,
+            MESearchMethod motionEstimationSearchMethod,
+            const UInt     maxCUWidth,
+            const UInt     maxCUHeight,
+            const UInt     maxTotalCUDepth,
+            TEncEntropy*   pcEntropyCoder,
+            TComRdCost*    pcRdCost,
+            TEncSbac***    pppcRDSbacCoder,
+            TEncSbac*      pcRDGoOnSbacCoder );
+
+  Void destroy();
+
 protected:
 
   /// sub-function for motion vector refinement used in fractional-pel accuracy
@@ -156,7 +147,7 @@ protected:
 
   typedef struct
   {
-    Pel*        piRefY;
+    const Pel*  piRefY;
     Int         iYStride;
     Int         iBestX;
     Int         iBestY;
@@ -167,10 +158,10 @@ protected:
   } IntTZSearchStruct;
 
   // sub-functions for ME
-  __inline Void xTZSearchHelp         ( TComPattern* pcPatternKey, IntTZSearchStruct& rcStruct, const Int iSearchX, const Int iSearchY, const UChar ucPointNr, const UInt uiDistance );
-  __inline Void xTZ2PointSearch       ( TComPattern* pcPatternKey, IntTZSearchStruct& rcStrukt, TComMv* pcMvSrchRngLT, TComMv* pcMvSrchRngRB );
-  __inline Void xTZ8PointSquareSearch ( TComPattern* pcPatternKey, IntTZSearchStruct& rcStrukt, TComMv* pcMvSrchRngLT, TComMv* pcMvSrchRngRB, const Int iStartX, const Int iStartY, const Int iDist );
-  __inline Void xTZ8PointDiamondSearch( TComPattern* pcPatternKey, IntTZSearchStruct& rcStrukt, TComMv* pcMvSrchRngLT, TComMv* pcMvSrchRngRB, const Int iStartX, const Int iStartY, const Int iDist );
+  __inline Void xTZSearchHelp         ( const TComPattern* const pcPatternKey, IntTZSearchStruct& rcStruct, const Int iSearchX, const Int iSearchY, const UChar ucPointNr, const UInt uiDistance );
+  __inline Void xTZ2PointSearch       ( const TComPattern* const pcPatternKey, IntTZSearchStruct& rcStruct, const TComMv* const pcMvSrchRngLT, const TComMv* const pcMvSrchRngRB );
+  __inline Void xTZ8PointSquareSearch ( const TComPattern* const pcPatternKey, IntTZSearchStruct& rcStruct, const TComMv* const pcMvSrchRngLT, const TComMv* const pcMvSrchRngRB, const Int iStartX, const Int iStartY, const Int iDist );
+  __inline Void xTZ8PointDiamondSearch( const TComPattern* const pcPatternKey, IntTZSearchStruct& rcStruct, const TComMv* const pcMvSrchRngLT, const TComMv* const pcMvSrchRngRB, const Int iStartX, const Int iStartY, const Int iDist, const Bool bCheckCornersAtDist1 );
 
   Void xGetInterPredictionError( TComDataCU* pcCU, TComYuv* pcYuvOrg, Int iPartIdx, Distortion& ruiSAD, Bool Hadamard );
 
@@ -217,9 +208,6 @@ public:
   /// set ME search range
   Void setAdaptiveSearchRange   ( Int iDir, Int iRefIdx, Int iSearchRange) { assert(iDir < MAX_NUM_REF_LIST_ADAPT_SR && iRefIdx<Int(MAX_IDX_ADAPT_SR)); m_aaiAdaptSR[iDir][iRefIdx] = iSearchRange; }
 
-  /// OpenCL Motion Estimation Added by: Augusto
-  Void calcMotionVectorOpenCL(TComDataCU*& pcCU, TComYuv* pcOrgYuv, PartSize ePartSize);
-  
   Void xEncPCM    (TComDataCU* pcCU, UInt uiAbsPartIdx, Pel* piOrg, Pel* piPCM, Pel* piPred, Pel* piResi, Pel* piReco, UInt uiStride, UInt uiWidth, UInt uiHeight, const ComponentID compID );
   Void IPCMSearch (TComDataCU* pcCU, TComYuv* pcOrgYuv, TComYuv* rpcPredYuv, TComYuv* rpcResiYuv, TComYuv* rpcRecoYuv );
 protected:
@@ -284,7 +272,7 @@ protected:
                                                const Int     strideResi,
                                                const Int     strideBest );
 
-  Char xCalcCrossComponentPredictionAlpha    (       TComTU &rTu,
+  SChar xCalcCrossComponentPredictionAlpha   (       TComTU &rTu,
                                                const ComponentID compID,
                                                const Pel*        piResiL,
                                                const Pel*        piResiC,
@@ -330,7 +318,6 @@ protected:
                                     Distortion& ruiCost );
 
   Distortion xGetTemplateCost    ( TComDataCU*  pcCU,
-                                    UInt        uiPartIdx,
                                     UInt        uiPartAddr,
                                     TComYuv*    pcOrgYuv,
                                     TComYuv*    pcTemplateCand,
@@ -370,7 +357,7 @@ protected:
   // -------------------------------------------------------------------------------------------------------------------
   // motion estimation
   // -------------------------------------------------------------------------------------------------------------------
-  
+
   Void xMotionEstimation          ( TComDataCU*  pcCU,
                                     TComYuv*     pcYuvOrg,
                                     Int          iPartIdx,
@@ -380,56 +367,53 @@ protected:
                                     TComMv&      rcMv,
                                     UInt&        ruiBits,
                                     Distortion&  ruiCost,
-                                    TComMv       (*rcMvOpenCL)[33][NUM_CTU_PARTS],
-                                    Distortion   (*ruiCostOpenCL)[33][NUM_CTU_PARTS],
-                                    Bool         isOpenCL,
-                                    Bool         bBi = false
+                                    Bool         bBi = false  );
+
+  Void xTZSearch                  ( const TComDataCU* const  pcCU,
+                                    const TComPattern* const pcPatternKey,
+                                    const Pel* const         piRefY,
+                                    const Int                iRefStride,
+                                    const TComMv* const      pcMvSrchRngLT,
+                                    const TComMv* const      pcMvSrchRngRB,
+                                    TComMv&                  rcMv,
+                                    Distortion&              ruiSAD,
+                                    const TComMv* const      pIntegerMv2Nx2NPred,
+                                    const Bool               bExtendedSettings
                                     );
 
-  Void xTZSearch                  ( TComDataCU*  pcCU,
-                                    TComPattern* pcPatternKey,
-                                    Pel*         piRefY,
-                                    Int          iRefStride,
-                                    TComMv*      pcMvSrchRngLT,
-                                    TComMv*      pcMvSrchRngRB,
-                                    TComMv&      rcMv,
-                                    Distortion&  ruiSAD,
-                                    const TComMv *pIntegerMv2Nx2NPred
+  Void xTZSearchSelective         ( const TComDataCU* const  pcCU,
+                                    const TComPattern* const pcPatternKey,
+                                    const Pel* const         piRefY,
+                                    const Int                iRefStride,
+                                    const TComMv* const      pcMvSrchRngLT,
+                                    const TComMv* const      pcMvSrchRngRB,
+                                    TComMv&                  rcMv,
+                                    Distortion&              ruiSAD,
+                                    const TComMv* const      pIntegerMv2Nx2NPred
                                     );
 
-  Void xTZSearchSelective         ( TComDataCU*  pcCU,
-                                    TComPattern* pcPatternKey,
-                                    Pel*         piRefY,
-                                    Int          iRefStride,
-                                    TComMv*      pcMvSrchRngLT,
-                                    TComMv*      pcMvSrchRngRB,
-                                    TComMv&      rcMv,
-                                    Distortion&  ruiSAD,
-                                    const TComMv *pIntegerMv2Nx2NPred
-                                    );
-
-  Void xSetSearchRange            ( TComDataCU*  pcCU,
-                                    TComMv&      cMvPred,
-                                    Int          iSrchRng,
+  Void xSetSearchRange            ( const TComDataCU* const pcCU,
+                                    const TComMv&      cMvPred,
+                                    const Int          iSrchRng,
                                     TComMv&      rcMvSrchRngLT,
                                     TComMv&      rcMvSrchRngRB );
 
-  Void xPatternSearchFast         ( TComDataCU*  pcCU,
-                                    TComPattern* pcPatternKey,
-                                    Pel*         piRefY,
-                                    Int          iRefStride,
-                                    TComMv*      pcMvSrchRngLT,
-                                    TComMv*      pcMvSrchRngRB,
-                                    TComMv&      rcMv,
-                                    Distortion&  ruiSAD,
-                                    const TComMv* pIntegerMv2Nx2NPred
+  Void xPatternSearchFast         ( const TComDataCU* const  pcCU,
+                                    const TComPattern* const pcPatternKey,
+                                    const Pel* const         piRefY,
+                                    const Int                iRefStride,
+                                    const TComMv* const      pcMvSrchRngLT,
+                                    const TComMv* const      pcMvSrchRngRB,
+                                    TComMv&                  rcMv,
+                                    Distortion&              ruiSAD,
+                                    const TComMv* const      pIntegerMv2Nx2NPred
                                   );
 
-  Void xPatternSearch             ( TComPattern* pcPatternKey,
-                                    Pel*         piRefY,
-                                    Int          iRefStride,
-                                    TComMv*      pcMvSrchRngLT,
-                                    TComMv*      pcMvSrchRngRB,
+  Void xPatternSearch             ( const TComPattern* const pcPatternKey,
+                                    const Pel*               piRefY,
+                                    const Int                iRefStride,
+                                    const TComMv* const      pcMvSrchRngLT,
+                                    const TComMv* const      pcMvSrchRngRB,
                                     TComMv&      rcMv,
                                     Distortion&  ruiSAD );
 
@@ -441,12 +425,11 @@ protected:
                                     TComMv*      pcMvInt,
                                     TComMv&      rcMvHalf,
                                     TComMv&      rcMvQter,
-                                    Distortion&  ruiCost,
-                                    Bool         biPred
+                                    Distortion&  ruiCost
                                    );
 
-  Void xExtDIFUpSamplingH( TComPattern* pcPattern, Bool biPred  );
-  Void xExtDIFUpSamplingQ( TComPattern* pcPatternKey, TComMv halfPelRef, Bool biPred );
+  Void xExtDIFUpSamplingH( TComPattern* pcPattern );
+  Void xExtDIFUpSamplingQ( TComPattern* pcPatternKey, TComMv halfPelRef );
 
   // -------------------------------------------------------------------------------------------------------------------
   // T & Q & Q-1 & T-1
@@ -457,7 +440,7 @@ protected:
   Void xEstimateInterResidualQT( TComYuv* pcResi, Double &rdCost, UInt &ruiBits, Distortion &ruiDist, Distortion *puiZeroDist, TComTU &rTu DEBUG_STRING_FN_DECLARE(sDebug) );
   Void xSetInterResidualQTData( TComYuv* pcResi, Bool bSpatial, TComTU &rTu  );
 
-  UInt  xModeBitsIntra ( TComDataCU* pcCU, UInt uiMode, UInt uiPartOffset, UInt uiDepth, UInt uiInitTrDepth, const ChannelType compID );
+  UInt  xModeBitsIntra ( TComDataCU* pcCU, UInt uiMode, UInt uiPartOffset, UInt uiDepth, const ChannelType compID );
   UInt  xUpdateCandList( UInt uiMode, Double uiCost, UInt uiFastCandNum, UInt * CandModeList, Double * CandCostList );
 
   // -------------------------------------------------------------------------------------------------------------------
@@ -465,13 +448,8 @@ protected:
   // -------------------------------------------------------------------------------------------------------------------
 
   Void xAddSymbolBitsInter       ( TComDataCU*   pcCU,
-                                   UInt          uiQp,
-                                   UInt          uiTrMode,
                                    UInt&         ruiBits);
-  
- // index to get Motion Vector and ruiCost calculated with OpenCl Added by: Augusto
-  Int xGetIndexBlock(UChar Width, UChar Height, Int iPartIdx, UChar Depth, UInt zOrder, PartSize i_ePartSize);
-  
+
   Void  setWpScalingDistParam( TComDataCU* pcCU, Int iRefIdx, RefPicList eRefPicListCur );
   inline  Void  setDistParamComp( ComponentID compIdx )  { m_cDistParam.compIdx = compIdx; }
 

@@ -14,7 +14,7 @@ SRC_DIR4		=
 
 
 USER_INC_DIRS	= -I$(SRC_DIR)
-USER_LIB_DIRS	= -L$(LIB_DIR)
+USER_LIB_DIRS	=
 
 ifeq ($(HIGHBITDEPTH), 1)
 HBD=HighBitDepth
@@ -50,7 +50,6 @@ OBJS          	= \
 			$(OBJ_DIR)/TEncEntropy.o \
 			$(OBJ_DIR)/TEncGOP.o \
 			$(OBJ_DIR)/TEncSbac.o \
-			$(OBJ_DIR)/TEncOpenCL.o \
 			$(OBJ_DIR)/TEncSearch.o \
 			$(OBJ_DIR)/TEncSlice.o \
 			$(OBJ_DIR)/TEncTop.o \
@@ -59,17 +58,17 @@ OBJS          	= \
 			$(OBJ_DIR)/WeightPredAnalysis.o \
 			$(OBJ_DIR)/TEncRateCtrl.o \
 
-LIBS				= -lpthread 
+LIBS				= -lpthread
 
-DEBUG_LIBS			= -lOpenCL
-RELEASE_LIBS			= -lOpenCL
+DEBUG_LIBS			=
+RELEASE_LIBS		=
 
-STAT_LIBS			= -lOpenCL
+STAT_LIBS			=
 DYN_LIBS			= -ldl
 
 # the libraries to link with
-STAT_DEBUG_LIBS		= /opt/AMDAPPSDK-2.9-1/lib/x86_64/
-STAT_RELEASE_LIBS	= /opt/AMDAPPSDK-2.9-1/lib/x86_64/
+STAT_DEBUG_LIBS		=
+STAT_RELEASE_LIBS	=
 DYN_DEBUG_LIBS		=
 DYN_RELEASE_LIBS	=
 
