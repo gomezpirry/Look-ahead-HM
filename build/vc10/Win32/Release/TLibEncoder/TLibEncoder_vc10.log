@@ -1,0 +1,23 @@
+﻿  NALwrite.cpp
+  SEIEncoder.cpp
+  SEIwrite.cpp
+  SyntaxElementWriter.cpp
+  TEncBinCoderCABAC.cpp
+  TEncBinCoderCABACCounter.cpp
+  TEncCavlc.cpp
+  TEncCu.cpp
+  TEncEntropy.cpp
+  TEncGOP.cpp
+  TEncOpenCL.cpp
+..\..\source\Lib\TLibEncoder\TEncOpenCL.cpp(185): warning C4996: 'clCreateCommandQueue': was declared deprecated
+          C:\Program Files (x86)\AMD APP SDK\3.0\include\CL/cl.h(1359) : see declaration of 'clCreateCommandQueue'
+  TEncPic.cpp
+  TEncPreanalyzer.cpp
+  TEncRateCtrl.cpp
+  TEncSampleAdaptiveOffset.cpp
+  TEncSbac.cpp
+  TEncSearch.cpp
+  TEncSlice.cpp
+  TEncTop.cpp
+  WeightPredAnalysis.cpp
+  TLibEncoder_vc10.vcxproj -> C:\Users\augusto\Documents\GitHub\Look-ahead-HM\build\\vc10\Win32\Release\TLibEncoder\TLibEncoder.lib

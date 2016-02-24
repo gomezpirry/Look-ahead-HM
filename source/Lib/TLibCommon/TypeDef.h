@@ -38,9 +38,9 @@
 #ifndef __TYPEDEF__
 #define __TYPEDEF__
 
-#ifndef __COMMONDEF__
-#error Include CommonDef.h not TypeDef.h
-#endif
+//#ifndef __COMMONDEF__
+//#error Include CommonDef.h not TypeDef.h
+//#endif
 
 #include <vector>
 
@@ -438,6 +438,14 @@ enum MESearchMethod
   MESEARCH_SELECTIVE         = 2,
   MESEARCH_DIAMOND_ENHANCED  = 3,
   MESEARCH_NUMBER_OF_METHODS = 4
+};
+
+/// supported ME fast search methods with OpenCL
+enum MEFastSearchMethod
+{
+	MEFASTSEARCH_DIAMOND = 0,
+	MEFASTSEARCH_HEXAGON = 1
+
 };
 
 /// coefficient scanning type used in ACS

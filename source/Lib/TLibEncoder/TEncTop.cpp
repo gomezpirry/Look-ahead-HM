@@ -183,6 +183,9 @@ Void TEncTop::init(Bool isFieldCoding)
   // initialize SPS
   xInitSPS();
   xInitVPS();
+  
+  if(getOpenCL())
+     xInitOpenCL();
 
 #if U0132_TARGET_BITS_SATURATION
   if (m_RCCpbSaturationEnabled)
@@ -1214,6 +1217,33 @@ Void  TEncTop::xInitPPSforTiles()
   m_cPPS.setLoopFilterAcrossTilesEnabledFlag( m_loopFilterAcrossTilesEnabledFlag );
 
   // # substreams is "per tile" when tiles are independent.
+}
+
+Void TEncTop::xInitOpenCL()
+{
+    const TChar* kernelCalc = "C:/Users/augusto/Documents/Look-ahead-HM/cl/sad.cl";  // .cl file path
+
+	if (m_cOpenCLME.findDevice(getOpenCLDevice()))
+	{
+		if(m_cOpenCLME.compileKernel(kernelCalc))
+		{
+			printf("OpenCL Kernel Compiled\n");
+			if(m_cOpenCLME.createBuffers(getMaxCUWidth(), getMaxCUHeight(), getSearchRange()))
+				printf("Buffers created\n");
+			else
+			{
+				printf("Create Buffers error!!!\n");
+				printf("OpenCL Motion Estimation Disabled\n");
+				setOpenCL( false ) ;
+			}
+		}
+	}            
+	else
+    {
+        printf("Failed Compiled Kernel\n");
+        printf("OpenCL Motion Estimation Disabled\n");
+        setOpenCL( false ) ;
+     }
 }
 
 Void  TEncCfg::xCheckGSParameters()

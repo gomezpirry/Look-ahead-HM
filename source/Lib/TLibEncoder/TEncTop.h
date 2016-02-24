@@ -57,6 +57,7 @@
 #include "TEncSampleAdaptiveOffset.h"
 #include "TEncPreanalyzer.h"
 #include "TEncRateCtrl.h"
+#include "TEncOpenCL.h"
 //! \ingroup TLibEncoder
 //! \{
 
@@ -76,6 +77,7 @@ private:
 
   // encoder search
   TEncSearch              m_cSearch;                      ///< encoder search class
+  TEncOpenCL              m_cOpenCLME;                      ///< encoder opencl motion estimation class
   //TEncEntropy*            m_pcEntropyCoder;                     ///< entropy encoder
   TEncCavlc*              m_pcCavlcCoder;                       ///< CAVLC encoder
   // coding tool
@@ -121,6 +123,7 @@ protected:
 
   Void  xInitPPSforTiles  ();
   Void  xInitRPS          (Bool isFieldCoding);           ///< initialize PPS from encoder options
+  Void  xInitOpenCL       ();            ///< check OpenCL requirements and initilize parameters
 
 public:
   TEncTop();
@@ -137,6 +140,7 @@ public:
 
   TComList<TComPic*>*     getListPic            () { return  &m_cListPic;             }
   TEncSearch*             getPredSearch         () { return  &m_cSearch;              }
+  TEncOpenCL*             getOpenCLME           () { return  &m_cOpenCLME;              }
 
   TComTrQuant*            getTrQuant            () { return  &m_cTrQuant;             }
   TComLoopFilter*         getLoopFilter         () { return  &m_cLoopFilter;          }

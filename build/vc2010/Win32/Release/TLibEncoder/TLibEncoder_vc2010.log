@@ -1,0 +1,23 @@
+﻿  NALwrite.cpp
+  SEIEncoder.cpp
+  SEIwrite.cpp
+  SyntaxElementWriter.cpp
+  TEncBinCoderCABAC.cpp
+  TEncBinCoderCABACCounter.cpp
+  TEncCavlc.cpp
+  TEncCu.cpp
+  TEncEntropy.cpp
+  TEncGOP.cpp
+  TEncOpenCL.cpp
+..\..\source\Lib\TLibEncoder\TEncOpenCL.cpp(88): warning C4018: '>' : signed/unsigned mismatch
+..\..\source\Lib\TLibEncoder\TEncOpenCL.cpp(105): error C2065: 'contextCallback' : undeclared identifier
+  TEncPic.cpp
+  TEncPreanalyzer.cpp
+  TEncRateCtrl.cpp
+  TEncSampleAdaptiveOffset.cpp
+  TEncSbac.cpp
+  TEncSearch.cpp
+  TEncSlice.cpp
+  TEncTop.cpp
+..\..\source\Lib\TLibEncoder\TEncTop.cpp(1224): warning C4101: 'kernelCalc' : unreferenced local variable
+  WeightPredAnalysis.cpp

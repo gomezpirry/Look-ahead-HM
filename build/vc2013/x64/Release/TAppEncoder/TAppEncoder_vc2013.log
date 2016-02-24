@@ -1,0 +1,9 @@
+﻿  TAppEncCfg.cpp
+  TAppEncTop.cpp
+  encmain.cpp
+  Generating code
+  180 of 6343 functions ( 2.8%) were compiled, the rest were copied from previous compilation.
+    2 functions were new in current compilation
+    83 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  TAppEncoder_vc2013.vcxproj -> C:\Users\augusto\Documents\Look-ahead-HM\build\\..\bin\vc2013\x64\Release\TAppEncoder.exe

@@ -182,6 +182,9 @@ protected:
   Bool      m_bFastMEAssumingSmootherMVEnabled;
   Int       m_minSearchWindow;
   Bool      m_bRestrictMESampling;
+  Bool      m_useOpenCL;    
+  Int       m_OpenCLDevice;
+  Bool      m_useLookAhead;
 
   //====== Quality control ========
   Int       m_iMaxDeltaQP;                      //  Max. absolute delta QP (1:default)
@@ -453,6 +456,8 @@ public:
   Void      setMaxTempLayer                 ( Int maxTempLayer )            { m_maxTempLayer = maxTempLayer;      }
   Void      setMaxCUWidth                   ( UInt  u )      { m_maxCUWidth  = u; }
   Void      setMaxCUHeight                  ( UInt  u )      { m_maxCUHeight = u; }
+  UInt      getMaxCUWidth					()				 { return m_maxCUWidth;  }
+  UInt      getMaxCUHeight					()				 { return m_maxCUHeight; }
   Void      setMaxTotalCUDepth              ( UInt  u )      { m_maxTotalCUDepth = u; }
   Void      setLog2DiffMaxMinCodingBlockSize( UInt  u )      { m_log2DiffMaxMinCodingBlockSize = u; }
 
@@ -480,6 +485,12 @@ public:
   Void      setFastMEAssumingSmootherMVEnabled ( Bool b )    { m_bFastMEAssumingSmootherMVEnabled = b; }
   Void      setMinSearchWindow              ( Int   i )      { m_minSearchWindow = i; }
   Void      setRestrictMESampling           ( Bool  b )      { m_bRestrictMESampling = b; }
+  Void      setOpenCL                       ( Bool  b )      { m_useOpenCL = b; }
+  Bool      getOpenCL                       ()               { return m_useOpenCL; }
+  Void      setOpenCLDevice                 ( Int   i )      { m_OpenCLDevice = i; }
+  Int       getOpenCLDevice                 ()               { return m_OpenCLDevice; }
+  Void      setLookAhead                    ( Bool  b )      { m_useLookAhead = b; }
+  Bool      getLookAhead                    ()               { return m_useOpenCL; }
 
   //====== Quality control ========
   Void      setMaxDeltaQP                   ( Int   i )      { m_iMaxDeltaQP = i; }

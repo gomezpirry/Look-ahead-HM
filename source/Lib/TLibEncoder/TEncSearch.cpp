@@ -2826,6 +2826,8 @@ Void TEncSearch::xGetInterPredictionError( TComDataCU* pcCU, TComYuv* pcYuvOrg, 
   ruiErr = cDistParam.DistFunc( &cDistParam );
 }
 
+
+
 //! estimation of best merge coding
 Void TEncSearch::xMergeEstimation( TComDataCU* pcCU, TComYuv* pcYuvOrg, Int iPUIdx, UInt& uiInterDir, TComMvField* pacMvField, UInt& uiMergeIndex, Distortion& ruiCost, TComMvField* cMvFieldNeighbours, UChar* uhInterDirNeighbours, Int& numValidMergeCand )
 {
@@ -3655,6 +3657,52 @@ Distortion TEncSearch::xGetTemplateCost( TComDataCU* pcCU,
   return uiCost;
 }
 
+//! look-ahead for calculating motion vector predictor
+Void TEncSearch::xLookAhead(TComDataCU* pcCU, TComYuv* pcYuvOrg, Int iPartIdx, RefPicList eRefPicList, TComMv* pcMvPred, Int iRefIdxPred, TComMv(*rcMvPredOpenCL)[33][NUM_CTU_PARTS], Distortion(*ruiCostPredOpenCL)[33][NUM_CTU_PARTS])
+{
+	UInt          uiPartAddr;
+	Int           iRoiWidth;
+	Int           iRoiHeight;
+
+	TComMv        cMvSrchRngLT;
+	TComMv        cMvSrchRngRB;
+
+	TComYuv*      pcYuv = pcYuvOrg;
+
+	assert(eRefPicList < MAX_NUM_REF_LIST_ADAPT_SR && iRefIdxPred<Int(MAX_IDX_ADAPT_SR));
+	m_iSearchRange = m_aaiAdaptSR[eRefPicList][iRefIdxPred];
+
+	Int           iSrchRng = m_iSearchRange;
+
+	pcCU->getPartIndexAndSize(iPartIdx, uiPartAddr, iRoiWidth, iRoiHeight);
+
+	Pel*        piRefY = pcCU->getSlice()->getRefPic(eRefPicList, iRefIdxPred)->getPicYuvRec()->getAddr(COMPONENT_Y, pcCU->getCtuRsAddr(), pcCU->getZorderIdxInCtu() + uiPartAddr);
+	Int         iRefStride = pcCU->getSlice()->getRefPic(eRefPicList, iRefIdxPred)->getPicYuvRec()->getStride(COMPONENT_Y);
+	Pel*        piCtu = pcYuv->getAddr(COMPONENT_Y, uiPartAddr);
+	Int         iCtuStride = pcYuv->getStride(COMPONENT_Y);
+
+	TComMv      cMvPred = *pcMvPred;
+
+	xSetSearchRange(pcCU, cMvPred, iSrchRng, cMvSrchRngLT, cMvSrchRngRB);	
+
+	m_ppcOpenCLME->calcMotionVectors(piCtu, piRefY, iRefStride, iCtuStride, iSrchRng, &cMvSrchRngLT,true, MEFASTSEARCH_DIAMOND); //Send to Buffers Initial Position of CTU and Search Area
+
+	// Get predictors																														 // Get Motion Vectors and ruiCost
+	Int* xTemp;
+	Int* yTemp;
+	Distortion* ruiCostTemp;
+
+	xTemp = m_ppcOpenCLME->getXPred();
+	yTemp = m_ppcOpenCLME->getYPred();
+	ruiCostTemp = m_ppcOpenCLME->getRuiCostPred();
+
+	for (int i = 0; i< NUM_CTU_PARTS; i++)
+	{
+		ruiCostPredOpenCL[eRefPicList][iRefIdxPred][i] = ruiCostTemp[i];
+		rcMvPredOpenCL[eRefPicList][iRefIdxPred][i].set((Short)xTemp[i], (Short)yTemp[i]);
+	}
+	
+}
 
 Void TEncSearch::xMotionEstimation( TComDataCU* pcCU, TComYuv* pcYuvOrg, Int iPartIdx, RefPicList eRefPicList, TComMv* pcMvPred, Int iRefIdxPred, TComMv& rcMv, UInt& ruiBits, Distortion& ruiCost, Bool bBi  )
 {

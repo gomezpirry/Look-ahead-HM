@@ -207,6 +207,9 @@ protected:
   Bool      m_enableIntraReferenceSmoothing;                  ///< flag for enabling(default)/disabling intra reference smoothing/filtering
 
   // coding tools (encoder-only parameters)
+  Bool      m_useOpenCL;                                      ///< flag for using motion estimation with opencl
+  Int       m_OpenCLDevice;                                   ///< Device to run OpenCL
+  Bool      m_useLookAhead;                                   ///< flag for using look-ahead motion estimation
   Bool      m_bUseASR;                                        ///< flag for using adaptive motion search range
   Bool      m_bUseHADME;                                      ///< flag for using HAD in sub-pel ME
   Bool      m_useRDOQ;                                       ///< flag for using RD optimized quantization

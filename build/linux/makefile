@@ -9,12 +9,12 @@ all:
 	$(MAKE) -C lib/TLibDecoder 	MM32=$(M32)
 	$(MAKE) -C lib/TLibEncoder 	MM32=$(M32)
 	$(MAKE) -C lib/TAppCommon       MM32=$(M32)
-	$(MAKE) -C app/TAppDecoder      MM32=$(M32)
+	#$(MAKE) -C app/TAppDecoder      MM32=$(M32)
 	$(MAKE) -C app/TAppEncoder      MM32=$(M32)
-	$(MAKE) -C utils/annexBbytecount       MM32=$(M32)
-	$(MAKE) -C utils/convert_NtoMbit_YCbCr MM32=$(M32)
-	$(MAKE) -C lib/TLibDecoderAnalyser 	MM32=$(M32)
-	$(MAKE) -C app/TAppDecoderAnalyser      MM32=$(M32)
+	#$(MAKE) -C utils/annexBbytecount       MM32=$(M32)
+	#$(MAKE) -C utils/convert_NtoMbit_YCbCr MM32=$(M32)
+	#$(MAKE) -C lib/TLibDecoderAnalyser 	MM32=$(M32)
+	#$(MAKE) -C app/TAppDecoderAnalyser      MM32=$(M32)
 
 debug:
 	$(MAKE) -C lib/TLibVideoIO 	debug MM32=$(M32)

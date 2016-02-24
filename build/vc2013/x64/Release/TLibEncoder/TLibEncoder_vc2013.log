@@ -1,0 +1,11 @@
+﻿  SEIEncoder.cpp
+  TEncCu.cpp
+  TEncGOP.cpp
+  TEncOpenCL.cpp
+..\..\source\Lib\TLibEncoder\TEncOpenCL.cpp(222): warning C4996: 'clCreateCommandQueue': was declared deprecated
+  C:\Program Files (x86)\AMD APP SDK\3.0\include\CL/cl.h(1359): note: see declaration of 'clCreateCommandQueue'
+  TEncSbac.cpp
+  TEncSearch.cpp
+  TEncSlice.cpp
+  TEncTop.cpp
+  TLibEncoder_vc2013.vcxproj -> C:\Users\augusto\Documents\Look-ahead-HM\build\\vc2013\x64\Release\TLibEncoder\TLibEncoder.lib

@@ -1031,7 +1031,10 @@ Bool TAppEncCfg::parseCfg( Int argc, TChar* argv[] )
   ("SEIMasteringDisplayMinLuminance",                 m_masteringDisplay.minLuminance,                      0u, "Specifies the mastering display minimum luminance value in units of 1/10000 candela per square metre (32-bit code value)")
   ("SEIMasteringDisplayPrimaries",                    cfg_DisplayPrimariesCode,       cfg_DisplayPrimariesCode, "Mastering display primaries for all three colour planes in CIE xy coordinates in increments of 1/50000 (results in the ranges 0 to 50000 inclusive)")
   ("SEIMasteringDisplayWhitePoint",                   cfg_DisplayWhitePointCode,     cfg_DisplayWhitePointCode, "Mastering display white point CIE xy coordinates in normalised increments of 1/50000 (e.g. 0.333 = 16667)")
-    
+  ("OpenCL",                                          m_useOpenCL,                                        false, "OpenCL Motion Estimation")    
+  ("OpenCLDevice",                                    m_OpenCLDevice,                                         0, "ID OpenCL Motion estimation Device")
+  ("Look-Ahead",                                      m_useLookAhead,                                     false, "Look-Ahead Motion Estimation")
+  
   ;
 
   for(Int i=1; i<MAX_GOP+1; i++)
@@ -2386,6 +2389,9 @@ Void TAppEncCfg::xPrintParameter()
   printf("Decoding refresh type                  : %d\n", m_iDecodingRefreshType );
   printf("QP                                     : %5.2f\n", m_fQP );
   printf("Max dQP signaling depth                : %d\n", m_iMaxCuDQPDepth);
+  printf("OpenCL                                 : %s\n", (m_useOpenCL ? "Enabled" : "Disabled") );
+  printf("OpenCL Device                          : %d\n", m_OpenCLDevice);
+  printf("Look-Ahead                             : %s\n", (m_useLookAhead ? "Enabled" : "Disabled") );
 
   printf("Cb QP Offset                           : %d\n", m_cbQpOffset   );
   printf("Cr QP Offset                           : %d\n", m_crQpOffset);

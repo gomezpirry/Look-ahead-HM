@@ -1,0 +1,31 @@
+﻿  libmd5.c
+  TComYuv.cpp
+  TComWeightPrediction.cpp
+  TComTU.cpp
+  TComTrQuant.cpp
+  TComSlice.cpp
+  TComSampleAdaptiveOffset.cpp
+  TComRom.cpp
+  TComRdCostWeightPrediction.cpp
+  TComRdCost.cpp
+  TComPrediction.cpp
+  TComPicYuvMD5.cpp
+  TComPicYuv.cpp
+  TComPicSym.cpp
+  TComPic.cpp
+  TComPattern.cpp
+  TComMotionInfo.cpp
+  TComLoopFilter.cpp
+  TComInterpolationFilter.cpp
+  TComDataCU.cpp
+  TComChromaFormat.cpp
+  Generating Code...
+  Compiling...
+  TComCABACTables.cpp
+  TComBitStream.cpp
+  SEI.cpp
+  Debug.cpp
+  ContextModel3DBuffer.cpp
+  ContextModel.cpp
+  Generating Code...
+  TLibCommon_vc10.vcxproj -> C:\Users\augusto\Downloads\HM-OpenCL\build\\vc10\Win32\Debug\TLibCommon\TLibCommon.lib

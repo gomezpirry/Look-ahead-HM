@@ -46,6 +46,7 @@
 #include "TLibCommon/TComTrQuant.h"
 #include "TLibCommon/TComPic.h"
 #include "TLibCommon/TComRectangle.h"
+#include "TEncOpenCL.h"
 #include "TEncEntropy.h"
 #include "TEncSbac.h"
 #include "TEncCfg.h"
@@ -68,40 +69,46 @@ static const UInt NUM_MV_PREDICTORS=3;
 class TEncSearch : public TComPrediction
 {
 private:
-  TCoeff**        m_ppcQTTempCoeff[MAX_NUM_COMPONENT /* 0->Y, 1->Cb, 2->Cr*/];
+	TCoeff**        m_ppcQTTempCoeff[MAX_NUM_COMPONENT /* 0->Y, 1->Cb, 2->Cr*/];
 #if ADAPTIVE_QP_SELECTION
-  TCoeff**        m_ppcQTTempArlCoeff[MAX_NUM_COMPONENT];
+	TCoeff**        m_ppcQTTempArlCoeff[MAX_NUM_COMPONENT];
 #endif
-  UChar*          m_puhQTTempTrIdx;
-  UChar*          m_puhQTTempCbf[MAX_NUM_COMPONENT];
+	UChar*          m_puhQTTempTrIdx;
+	UChar*          m_puhQTTempCbf[MAX_NUM_COMPONENT];
 
-  TComYuv*        m_pcQTTempTComYuv;
-  TComYuv         m_tmpYuvPred; // To be used in xGetInterPredictionError() to avoid constant memory allocation/deallocation
+	TComYuv*        m_pcQTTempTComYuv;
+	TComYuv         m_tmpYuvPred; // To be used in xGetInterPredictionError() to avoid constant memory allocation/deallocation
 
-  SChar*          m_phQTTempCrossComponentPredictionAlpha[MAX_NUM_COMPONENT];
-  Pel*            m_pSharedPredTransformSkip[MAX_NUM_COMPONENT];
-  TCoeff*         m_pcQTTempTUCoeff[MAX_NUM_COMPONENT];
-  UChar*          m_puhQTTempTransformSkipFlag[MAX_NUM_COMPONENT];
-  TComYuv         m_pcQTTempTransformSkipTComYuv;
+	SChar*          m_phQTTempCrossComponentPredictionAlpha[MAX_NUM_COMPONENT];
+	Pel*            m_pSharedPredTransformSkip[MAX_NUM_COMPONENT];
+	TCoeff*         m_pcQTTempTUCoeff[MAX_NUM_COMPONENT];
+	UChar*          m_puhQTTempTransformSkipFlag[MAX_NUM_COMPONENT];
+	TComYuv         m_pcQTTempTransformSkipTComYuv;
 #if ADAPTIVE_QP_SELECTION
-  TCoeff*         m_ppcQTTempTUArlCoeff[MAX_NUM_COMPONENT];
+	TCoeff*         m_ppcQTTempTUArlCoeff[MAX_NUM_COMPONENT];
 #endif
 
 protected:
-  // interface to option
-  TEncCfg*        m_pcEncCfg;
+	// interface to option
+	TEncCfg*        m_pcEncCfg;
 
-  // interface to classes
-  TComTrQuant*    m_pcTrQuant;
-  TComRdCost*     m_pcRdCost;
-  TEncEntropy*    m_pcEntropyCoder;
+	// interface to classes
+	TComTrQuant*    m_pcTrQuant;
+	TComRdCost*     m_pcRdCost;
+	TEncEntropy*    m_pcEntropyCoder;
+	TEncOpenCL*		m_ppcOpenCLME;
 
-  // ME parameters
-  Int             m_iSearchRange;
-  Int             m_bipredSearchRange; // Search range for bi-prediction
-  MESearchMethod  m_motionEstimationSearchMethod;
-  Int             m_aaiAdaptSR[MAX_NUM_REF_LIST_ADAPT_SR][MAX_IDX_ADAPT_SR];
-  TComMv          m_acMvPredictors[NUM_MV_PREDICTORS]; // Left, Above, AboveRight. enum MVP_DIR first NUM_MV_PREDICTORS entries are suitable for accessing.
+	// ME parameters
+	Int             m_iSearchRange;
+	Int             m_bipredSearchRange; // Search range for bi-prediction
+	MESearchMethod  m_motionEstimationSearchMethod;
+	Int             m_aaiAdaptSR[MAX_NUM_REF_LIST_ADAPT_SR][MAX_IDX_ADAPT_SR];
+	TComMv          m_acMvPredictors[NUM_MV_PREDICTORS]; // Left, Above, AboveRight. enum MVP_DIR first NUM_MV_PREDICTORS entries are suitable for accessing.
+	
+	TComMv          m_allMotionVectors[2][33][NUM_CTU_PARTS];  // Store Motion Vectors calculated with OpenCL
+	Distortion      m_allRuiCost[2][33][NUM_CTU_PARTS];		   // Store ruiCost calculated with OpenCL
+	TComMv			m_predMotionVectors[2][33][NUM_CTU_PARTS]; // Store motion vectors calculated by look-ahead, this are used like a precitor
+	Distortion		m_predRuiCost[2][33][NUM_CTU_PARTS];	   // Store distortion measurement calculated by look-ahead 
 
   // RD computation
   TEncSbac***     m_pppcRDSbacCoder;
@@ -210,6 +217,7 @@ public:
 
   Void xEncPCM    (TComDataCU* pcCU, UInt uiAbsPartIdx, Pel* piOrg, Pel* piPCM, Pel* piPred, Pel* piResi, Pel* piReco, UInt uiStride, UInt uiWidth, UInt uiHeight, const ComponentID compID );
   Void IPCMSearch (TComDataCU* pcCU, TComYuv* pcOrgYuv, TComYuv* rpcPredYuv, TComYuv* rpcResiYuv, TComYuv* rpcRecoYuv );
+
 protected:
 
   // -------------------------------------------------------------------------------------------------------------------
@@ -430,6 +438,8 @@ protected:
 
   Void xExtDIFUpSamplingH( TComPattern* pcPattern );
   Void xExtDIFUpSamplingQ( TComPattern* pcPatternKey, TComMv halfPelRef );
+
+  Void xLookAhead(TComDataCU* pcCU, TComYuv* pcYuvOrg, Int iPartIdx, RefPicList eRefPicList, TComMv* pcMvPred, Int iRefIdxPred, TComMv(*rcMvOpenCL)[33][NUM_CTU_PARTS], Distortion(*ruiCostOpenCL)[33][NUM_CTU_PARTS]);
 
   // -------------------------------------------------------------------------------------------------------------------
   // T & Q & Q-1 & T-1

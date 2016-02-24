@@ -152,6 +152,9 @@ Void TAppEncTop::xInitLibCfg()
   m_cTEncTop.setFastMEAssumingSmootherMVEnabled                   ( m_bFastMEAssumingSmootherMVEnabled );
   m_cTEncTop.setMinSearchWindow                                   ( m_minSearchWindow );
   m_cTEncTop.setRestrictMESampling                                ( m_bRestrictMESampling );
+  m_cTEncTop.setOpenCL                                            ( m_useOpenCL );
+  m_cTEncTop.setOpenCLDevice                                      ( m_OpenCLDevice );
+  m_cTEncTop.setLookAhead                                         ( m_useLookAhead );
 
   //====== Quality control ========
   m_cTEncTop.setMaxDeltaQP                                        ( m_iMaxDeltaQP  );
